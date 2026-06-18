@@ -29,12 +29,7 @@ class Settings(BaseSettings):
     # Browser origins allowed to call the API. Comma-separated in the env var.
     cors_origins: str = "http://localhost:3000"
 
-    @property
-    def cors_origins_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
-
-
-@lru_cache
-def get_settings() -> Settings:
-    """Cached so the .env is read once per process."""
-    return Settings()
+    # Contact string SEC EDGAR requires as the User-Agent on every request.
+    # Format: "AppName purpose your-email@example.com". SEC blocks requests
+    # without a real contact. Set in .env; placeholder is rejected at runtime.
+    sec_user_agent: str = "Mo

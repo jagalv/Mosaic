@@ -12,6 +12,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.config import get_settings
 from app.db import Base
+from app import models  # noqa: F401 — registers tables on Base.metadata
 
 # Alembic Config object (reads alembic.ini).
 config = context.config
@@ -52,7 +53,4 @@ def run_migrations_online() -> None:
             context.run_migrations()
 
 
-if context.is_offline_mode():
-    run_migrations_offline()
-else:
-    run_migrations_online()
+if context.is_offl

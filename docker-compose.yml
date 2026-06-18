@@ -1,0 +1,32 @@
+# Local development database for Mosaic.
+# Uses the official pgvector image so the `vector` extension is preinstalled
+# (we still have to `CREATE EXTENSION` once, which the Alembic migration does).
+#
+# Values come from the root .env (copy .env.example -> .env first).
+# To point the app at a hosted DB later (Supabase/Neon), leave this stopped and
+# just set DATABASE_URL in services/api's environment — nothing here changes.
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: mosaic-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mosaic}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mosaic}
+      POSTGRES_DB: ${POSTGRES_DB:-mosaic}
+    ports:
+      # host:container — host port is configurable so it won't clash with a
+      # local Postgres you may already run on 5432.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - mosaic_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # `docker compose ps` / dependent services can wait on real readiness.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mosaic} -d ${POSTGRES_DB:-mosaic}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mosaic_pgdata:

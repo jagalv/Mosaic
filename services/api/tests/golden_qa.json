@@ -1,0 +1,130 @@
+{
+  "_about": "Golden Q&A set for Milestone 3 RAG eval. Each answerable item lists `answer_spans`: verbatim substrings that appear in the cited filing's content_text at the passage that answers the question. Retrieval recall@k = at least one retrieved chunk contains an answer_span. Unanswerable items (answer_spans empty) must make the model abstain. All spans are checked to exist in the real filing before scoring; if a filing is re-ingested and text shifts, the eval will flag a stale span rather than score against a phantom.",
+  "questions": [
+    {
+      "id": "aapl-fiscal-year-end",
+      "accession": "0000320193-25-000079",
+      "question": "When does Apple's fiscal year end?",
+      "answer_spans": ["the last Saturday of September"],
+      "section": "item1",
+      "unanswerable": false,
+      "expected_answer": "Apple's fiscal year is the 52- or 53-week period ending on the last Saturday of September."
+    },
+    {
+      "id": "aapl-final-assembly-asia",
+      "accession": "0000320193-25-000079",
+      "question": "Where is final assembly of Apple's hardware products performed?",
+      "answer_spans": ["final assembly of substantially all of the Company"],
+      "section": "item1a",
+      "unanswerable": false,
+      "expected_answer": "Substantially all of Apple's hardware product final assembly is performed by outsourcing partners located primarily in Asia."
+    },
+    {
+      "id": "aapl-single-source-components",
+      "accession": "0000320193-25-000079",
+      "question": "Does Apple depend on single or limited sources for some components?",
+      "answer_spans": ["single or limited sources"],
+      "section": "item1a",
+      "unanswerable": false,
+      "expected_answer": "Yes — some components are currently obtained from single or limited sources."
+    },
+    {
+      "id": "aapl-legal-proceedings",
+      "accession": "0000320193-25-000079",
+      "question": "What does Apple say about legal proceedings and claims arising in the ordinary course of business?",
+      "answer_spans": ["subject to various legal proceedings and claims that arise in the ordinary course of business"],
+      "section": "item3",
+      "unanswerable": false,
+      "expected_answer": "Apple is subject to various legal proceedings and claims arising in the ordinary course of business, the outcomes of which are uncertain."
+    },
+    {
+      "id": "aapl-rd-rationale",
+      "accession": "0000320193-25-000079",
+      "question": "Why does Apple invest heavily in research and development?",
+      "answer_spans": [
+        "the industries in which the Company competes are characterized by rapid",
+        "timely introduction of innovative new products"
+      ],
+      "section": "item1",
+      "unanswerable": false,
+      "_span_note": "Both spans are clauses of Apple's stated R&D rationale (Item 1); chunking split the sentence, so either retrieved chunk correctly answers the question.",
+      "expected_answer": "Because the industries Apple competes in are characterized by rapid technological advances, its ability to compete depends on the timely introduction of innovative new products — so continued R&D is critical."
+    },
+    {
+      "id": "aapl-effective-tax-rate",
+      "accession": "0000320193-25-000079",
+      "question": "What factors affect Apple's effective tax rate?",
+      "answer_spans": [
+        "effective tax rates are affected by changes in the mix of earnings",
+        "Provision for Income Taxes and Effective Tax Rate"
+      ],
+      "section": "item1a",
+      "unanswerable": false,
+      "_span_note": "Risk-factor sentence (Item 1A) and the income-tax note (Item 8) both answer this; the note's rate reconciliation is the canonical source of the factors.",
+      "expected_answer": "Apple's effective tax rate is affected by the mix of earnings across jurisdictions with differing statutory rates and other items detailed in the income-tax note's rate reconciliation."
+    },
+    {
+      "id": "aapl-fx-exposure",
+      "accession": "0000320193-25-000079",
+      "question": "Is Apple exposed to foreign exchange rate fluctuations?",
+      "answer_spans": ["fluctuations in foreign exchange rates"],
+      "section": "item1a",
+      "unanswerable": false,
+      "expected_answer": "Yes — Apple cites fluctuations in foreign exchange rates among the macroeconomic factors that can affect its business."
+    },
+    {
+      "id": "msft-intelligent-cloud-segment",
+      "accession": "0000950170-25-100235",
+      "question": "What does Microsoft's Intelligent Cloud segment include?",
+      "answer_spans": ["server products and cloud services that power modern business"],
+      "section": "item1",
+      "unanswerable": false,
+      "expected_answer": "The Intelligent Cloud segment includes public, private, and hybrid server products and cloud services that power modern business and developers."
+    },
+    {
+      "id": "msft-intelligent-cloud-edge-ambition",
+      "accession": "0000950170-25-100235",
+      "question": "What is Microsoft's stated ambition for the intelligent cloud and intelligent edge?",
+      "answer_spans": ["intelligent cloud and intelligent edge platform"],
+      "section": "item1",
+      "unanswerable": false,
+      "expected_answer": "To build the intelligent cloud and intelligent edge platform as a foundation for customers' digital workloads."
+    },
+    {
+      "id": "msft-devices-gaming",
+      "accession": "0000950170-25-100235",
+      "question": "What categories of devices does Microsoft mention, including gaming?",
+      "answer_spans": ["gaming and entertainment consoles"],
+      "section": "item1",
+      "unanswerable": false,
+      "expected_answer": "PCs, tablets, gaming and entertainment consoles, and other intelligent devices and related accessories."
+    },
+    {
+      "id": "unanswerable-aapl-india-market-share",
+      "accession": "0000320193-25-000079",
+      "question": "What was Apple's smartphone market share in India during fiscal 2025?",
+      "answer_spans": [],
+      "section": null,
+      "unanswerable": true,
+      "expected_answer": "Not stated in the filings."
+    },
+    {
+      "id": "unanswerable-aapl-appstore-dau",
+      "accession": "0000320193-25-000079",
+      "question": "How many daily active users does the App Store have?",
+      "answer_spans": [],
+      "section": null,
+      "unanswerable": true,
+      "expected_answer": "Not stated in the filings."
+    },
+    {
+      "id": "unanswerable-msft-cfo-salary",
+      "accession": "0000950170-25-100235",
+      "question": "What is the exact annual base salary of Microsoft's Chief Financial Officer?",
+      "answer_spans": [],
+      "section": null,
+      "unanswerable": true,
+      "expected_answer": "Not stated in the filings."
+    }
+  ]
+}

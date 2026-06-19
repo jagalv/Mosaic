@@ -34,6 +34,20 @@ class Settings(BaseSettings):
     # without a real contact. Set in .env; placeholder is rejected at runtime.
     sec_user_agent: str = "Mosaic research you@example.com"
 
+    # Local sentence-transformers model for chunk + query embeddings (Milestone
+    # 3). 384-dim; locked into migration 0004 — don't change without a re-embed.
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+
+    # LLM for grounded answers (Milestone 3). Provider is swappable behind the
+    # app/llm seam. `mock` is a deterministic offline provider for tests.
+    # `gemini` needs GEMINI_API_KEY (free from Google AI Studio).
+    llm_provider: str = "gemini"
+    # gemini-2.5-flash-lite is what this project's key actually serves (the older
+    # gemini-2.0-flash returns limit:0 here). Swap via LLM_MODEL; free tier is
+    # ~20 req/day/model, so answer_cache matters.
+    llm_model: str = "gemini-2.5-flash-lite"
+    gemini_api_key: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

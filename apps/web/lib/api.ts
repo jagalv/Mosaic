@@ -63,3 +63,35 @@ export async function fetchFiling(accession: string): Promise<FilingData | null>
   if (!res.ok) throw new Error(`API ${res.status} for filing ${accession}`);
   return res.json();
 }
+
+export interface AskCitation {
+  marker: number; // the [n] used in the answer
+  chunk_id: number;
+  section_code: string;
+  char_start: number;
+  char_end: number;
+}
+
+export interface AskResponse {
+  answer: string;
+  abstained: boolean;
+  citations: AskCitation[];
+  cached: boolean;
+  provider: string;
+  model: string;
+  latency_ms: number;
+}
+
+/** Ask a grounded question about a filing (called client-side from the reader). */
+export async function askFiling(
+  accession: string,
+  question: string,
+): Promise<AskResponse> {
+  const res = await fetch(`${API_URL}/filing/${accession}/ask`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status} for ask ${accession}`);
+  return res.json();
+}

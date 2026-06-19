@@ -47,15 +47,17 @@ Get the boring infra green *before* writing features. It's demoralizing to fight
 ### Milestone 3 — The wedge: "Ask this filing" ← THE IMPORTANT ONE (≈1.5–2 weeks)
 This milestone proves the entire thesis. Spend real care here.
 
-- [ ] Section-aware chunking with metadata (`cik, accession_no, form_type, section, fiscal_period, char_range`)
-- [ ] Embed chunks (local `bge-small`/`e5-small`) → store in pgvector; never re-embed unchanged chunks (content hash)
-- [ ] Hybrid retrieval: pgvector semantic + Postgres full-text, fused (RRF), pre-filtered by company/form/section
-- [ ] Grounded answer endpoint: answer ONLY from retrieved context; cite chunk IDs; return "not stated in the filings" when unsupported
-- [ ] AI panel UI: streams the answer with footnotes that deep-link to the source paragraph
-- [ ] Build a golden Q&A set (10–20 questions with known answers + source spans)
-- [ ] Check faithfulness (every claim supported?) and retrieval recall@k before trusting it
-- [ ] `ai_interactions` log: prompt, retrieved chunk IDs, latency, tokens, feedback
-- [ ] `answer_cache` for repeated questions per filing
+- [x] Section-aware chunking with metadata (`cik, accession_no, form_type, section, fiscal_period, char_range`)
+- [x] Embed chunks (local `bge-small`/`e5-small`) → store in pgvector; never re-embed unchanged chunks (content hash)
+- [x] Hybrid retrieval: pgvector semantic + Postgres full-text, fused (RRF), pre-filtered by company/form/section — *OR keyword + company-name strip; **recall@8 = 1.00**.*
+- [x] Grounded answer endpoint: answer ONLY from retrieved context; cite chunk IDs; return "not stated in the filings" when unsupported — *verified: 10/10 answerable grounded+cited; abstains.*
+- [x] AI panel UI: footnotes that deep-link to the source paragraph — *built, `next build` clean (grouped-citation deep-links handled).*
+- [x] Build a golden Q&A set (10–20 questions with known answers + source spans) — *13 Qs (10 answerable, multi-span; 3 unanswerable), self-validating.*
+- [~] Check faithfulness (every claim supported?) and retrieval recall@k before trusting it — *recall@8 = 1.00 ✓; faithfulness 10/10 answerable grounded + 1/3 abstention confirmed; **2/3 abstentions pending free-tier quota reset.***
+- [x] `ai_interactions` log: prompt, retrieved chunk IDs, latency, tokens, feedback
+- [x] `answer_cache` for repeated questions per filing (key includes provider+model)
+
+**Status (near-complete):** `main` green (`pytest` 25/25, `next build` clean). **recall@8 = 1.00** (OR keyword + company-name strip + corrected multi-span eval key). **Faithfulness (gemini-2.5-flash-lite): 10/10 answerable answered with grounded citations, 0 hallucinations; 1/3 unanswerable confirmed abstaining.** Remaining to fully close M3: confirm the last 2 abstention cases once the ~20/day Gemini free-tier quota resets (blocked today; not a code issue). Found+fixed a grouped-citation parsing bug and a broken default model id along the way.
 
 **Demo:** ask a real question about a real filing, get a cited answer that links to the source. This is the "oh, that's actually useful" moment.
 

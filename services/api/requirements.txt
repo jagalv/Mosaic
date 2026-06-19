@@ -11,5 +11,14 @@ pydantic-settings==2.7.0
 httpx==0.28.1
 # HTML -> text for filing segmentation (uses stdlib html.parser; no compiled dep).
 beautifulsoup4==4.12.3
+# pgvector SQLAlchemy types for the Milestone 3 embedding column (vector(384)).
+pgvector==0.3.6
+# Local embeddings (BAAI/bge-small-en-v1.5) for Milestone 3 RAG. Pulls torch;
+# install CPU-only torch FIRST to avoid the ~2.5GB CUDA wheel:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements.txt
+sentence-transformers==3.3.1
+# Gemini client for grounded answers (Milestone 3). Needs GEMINI_API_KEY.
+google-genai==1.16.0
 # Test runner for the golden fixture test.
 pytest==8.3.4

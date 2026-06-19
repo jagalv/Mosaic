@@ -1,16 +1,12 @@
-// Filing reader (server component). Renders a filing's cleaned text with a
-// section nav. Sections come from the API as char offsets into content_text.
+// Filing reader (server component). Fetches the filing and renders its header;
+// the interactive body (section nav, text, and the "Ask this filing" panel)
+// lives in the FilingReader client component.
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { fetchFiling } from "@/lib/api";
+import { FilingReader } from "./reader";
 
 export default async function FilingPage({
   params,
@@ -21,7 +17,6 @@ export default async function FilingPage({
   const filing = await fetchFiling(accession);
   if (!filing) notFound();
 
-  const { content_text: text, sections } = filing;
   const ticker = filing.company.ticker;
 
   return (
@@ -59,61 +54,7 @@ export default async function FilingPage({
         </p>
       </header>
 
-      {sections.length === 0 ? (
-        // 10-Q (and any unsegmented form): show the full document text.
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Full document</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Section segmentation is currently 10-K only; showing full text.
-            </p>
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-              {text}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-[220px_1fr]">
-          <aside className="self-start md:sticky md:top-6">
-            <nav className="flex flex-col gap-1 text-sm">
-              {sections.map((s) => (
-                <a
-                  key={s.section_code}
-                  href={`#${s.section_code}`}
-                  className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  {s.title}
-                </a>
-              ))}
-            </nav>
-          </aside>
-
-          <article className="flex flex-col gap-8">
-            {sections.map((s) => {
-              // The slice begins with the raw heading line; drop it so the
-              // styled title isn't duplicated.
-              const body = text
-                .slice(s.char_start, s.char_end)
-                .split("\n")
-                .slice(1)
-                .join("\n")
-                .trim();
-              return (
-                <section key={s.section_code} id={s.section_code}>
-                  <h2 className="mb-2 scroll-mt-6 text-lg font-semibold">
-                    {s.title}
-                  </h2>
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                    {body}
-                  </div>
-                </section>
-              );
-            })}
-          </article>
-        </div>
-      )}
+      <FilingReader filing={filing} />
     </main>
   );
 }

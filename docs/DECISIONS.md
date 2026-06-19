@@ -5,6 +5,56 @@ genuine decision — not a changelog.
 
 ---
 
+## 2026-06-18 — Milestone 3 RAG stack: bge-small (384d) + section-aware chunks + RRF + Gemini Flash
+
+**Decision:** The "Ask this filing" pipeline is: section-aware sub-chunks
+(~3k chars, ~400 overlap, on paragraph boundaries, carrying absolute char
+offsets) → local `BAAI/bge-small-en-v1.5` embeddings (384-dim, pgvector HNSW
+cosine) → hybrid retrieval (pgvector semantic + Postgres full-text) fused with
+Reciprocal Rank Fusion (k=60), pre-filtered to one filing → grounded answer from
+**Gemini 2.0 Flash** behind an `app/llm` provider seam. `answer_cache` is keyed
+by `(filing_id, question_hash, provider, model)` so swapping `LLM_MODEL` never
+serves a stale answer from a different model. bge query/passage asymmetry is
+honored: queries get the "Represent this sentence for searching relevant
+passages:" instruction prefix, passages are embedded plain.
+
+**Why:** All four seams chosen with James for the ~$0 goal (local embeddings =
+no rate limits/cost; Gemini Flash free tier; RRF needs no score normalization
+across the cosine/ts_rank scales). 384-dim keeps the index small and is locked
+into migration 0004 — changing it requires a re-embed. Char offsets are
+preserved end-to-end so citations deep-link into the immutable `content_text`.
+
+## 2026-06-19 — Keyword retrieval: OR tsquery + drop the filing's own company name
+
+**Decision (applied):** The full-text half of hybrid retrieval builds an **OR**
+`to_tsquery` from the question's content terms (lowercased, stopworded), and also
+drops the **filing's own company name** tokens. Recall@8 went 0.60 → **1.00**.
+
+**Why:** AND semantics (`websearch_to_tsquery`) required every query term in one
+chunk, so natural-language questions matched nothing — effectively semantic-only.
+But OR alone didn't move the number: Postgres `ts_rank` has **no IDF**, so keeping
+the company name ("apple") + ubiquitous terms rewarded chunks that merely repeat
+common words over the chunk with the actual answer. In single-filing search the
+company name is in nearly every chunk, i.e. pure noise — dropping it is what
+recovered the answer chunks to rank 1–2. (Two remaining "misses" were a too-strict
+golden key, not a retrieval failure — see eval note.)
+
+## 2026-06-19 — Golden recall is multi-span; Gemini model pinned to what the key serves
+
+**Decision:** (1) Golden Q&A recall is scored against **multiple** legitimate
+answer spans per question, not one exact sentence. (2) Default `LLM_MODEL` is
+**gemini-2.5-flash-lite**, not gemini-2.0-flash.
+
+**Why:** (1) Inspection showed retrieval surfacing genuinely-correct passages at
+rank 1–2 that a single-span key marked as misses (e.g. the income-tax note answers
+"what affects the effective tax rate"). Allowing multiple relevant passages is
+standard IR practice and reflects real answerability. (2) This project's key
+returns `429 limit:0` for gemini-2.0-flash (not served); `client.models.list()`
+shows the 2.5/3.x lineup. flash-lite is verified end-to-end. Free tier is
+~20 req/day/model, so `answer_cache` is load-bearing, not a nicety. Also fixed:
+grouped citations (`[1, 2]`) were silently dropped by a `[\d]`-only parser
+(backend + UI) — they now parse, so answers aren't shown as uncited.
+
 ## 2026-06-18 — Defer Cloudflare R2; store filing text in Postgres behind a seam
 
 **Decision:** Milestone 2 stores cleaned filing text in Postgres

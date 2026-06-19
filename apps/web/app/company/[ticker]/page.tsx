@@ -1,6 +1,7 @@
 // Company page (server component). Renders header + 3 financial statement
 // tables, years as columns, from the API's pivoted data. No AI, no auth.
 
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
@@ -17,7 +18,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fetchCompany, type LineItemRow } from "@/lib/api";
+import {
+  fetchCompany,
+  type FilingSummary,
+  type LineItemRow,
+} from "@/lib/api";
 
 // Machine line-item names -> human labels.
 const LABELS: Record<string, string> = {
@@ -99,6 +104,51 @@ function StatementTable({
   );
 }
 
+function FilingsCard({ filings }: { filings: FilingSummary[] }) {
+  if (filings.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Filings</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-24">Form</TableHead>
+              <TableHead className="w-32">Filed</TableHead>
+              <TableHead>Document</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filings.map((f) => (
+              <TableRow key={f.accession_no}>
+                <TableCell className="font-medium">{f.form_type}</TableCell>
+                <TableCell className="tabular-nums">{f.filing_date ?? "—"}</TableCell>
+                <TableCell>
+                  {f.has_document ? (
+                    <Link
+                      href={`/filing/${f.accession_no}`}
+                      className="text-primary underline-offset-4 hover:underline"
+                    >
+                      Read
+                      {f.section_count > 0
+                        ? ` · ${f.section_count} sections`
+                        : ""}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">not ingested</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function CompanyPage({
   params,
 }: {
@@ -137,6 +187,7 @@ export default async function CompanyPage({
           rows={company.statements.cash_flow}
           years={company.years}
         />
+        <FilingsCard filings={company.filings} />
       </div>
     </main>
   );

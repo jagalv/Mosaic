@@ -17,6 +17,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
@@ -80,4 +81,50 @@ class Financial(Base):
             name="uq_financials_cik_line_year_period",
         ),
         Index("ix_financials_cik_statement", "cik", "statement_type"),
+    )
+
+
+class FilingDocument(Base):
+    """Cleaned plain text of a filing's primary document (1:1 with a filing).
+
+    `content_text` is immutable once written: section char offsets index into
+    it, and Milestone 3 citations depend on those offsets staying stable. It is
+    only re-derived on an explicit --refresh, which re-segments in the same pass.
+    """
+
+    __tablename__ = "filing_documents"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    filing_id: Mapped[int] = mapped_column(
+        ForeignKey("filings.id"), unique=True, nullable=False
+    )
+    source_url: Mapped[str | None] = mapped_column(String)
+    content_text: Mapped[str] = mapped_column(Text, nullable=False)
+    char_length: Mapped[int] = mapped_column(Integer, nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class FilingSection(Base):
+    """A structural section of a filing (e.g. Item 1A Risk Factors).
+
+    char_start/char_end are half-open offsets into the 1:1
+    FilingDocument.content_text.
+    """
+
+    __tablename__ = "filing_sections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    filing_id: Mapped[int] = mapped_column(
+        ForeignKey("filings.id"), nullable=False, index=True
+    )
+    section_code: Mapped[str] = mapped_column(String, nullable=False)  # e.g. 'item1a'
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    order_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    char_start: Mapped[int] = mapped_column(Integer, nullable=False)
+    char_end: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("filing_id", "section_code", name="uq_sections_filing_code"),
     )

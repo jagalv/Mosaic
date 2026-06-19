@@ -47,11 +47,13 @@ SEC EDGAR (submissions + companyfacts XBRL — the backbone), Yahoo Finance (`yf
 
 ```
 mosaic/
-  README.md            # this file
+  README.md            # this file — onboarding: what/why + current status
+  CLAUDE.md            # operating instructions auto-read by Claude Code (Alexander)
   docs/
     DESIGN.md          # full product + architecture vision
     ROADMAP.md         # milestone-based build plan (check boxes as you go)
     DECISIONS.md       # short dated log of real architectural choices
+    WORKLOG.md         # shared AI hand-off log (read latest at start, append at end)
   apps/
     web/               # Next.js frontend
   services/
@@ -82,9 +84,17 @@ cd services/api
 py -m venv .venv                              # Windows; use python3 on macOS/Linux
 .venv/Scripts/activate                        # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-alembic upgrade head                          # enables pgvector + creates health_check
+alembic upgrade head                          # creates schema (health_check + companies/filings/financials)
+
+# 2a. Ingest SEC data for the 10 starter companies (requires SEC_USER_AGENT in .env).
+#     Caches raw EDGAR JSON/HTML to data/ so reruns don't re-hit SEC; idempotent.
+python -m app.ingest.run                      # financials (companies/filings/financials)
+python -m app.ingest.documents                # filing text + 10-K section segmentation
+pytest                                         # golden tests: AAPL FY2023 numbers + 10-K sections
+
 uvicorn app.main:app --reload --port 8000
-# verify: curl http://localhost:8000/health  -> {"service":"ok","db":"ok"}
+# verify: curl http://localhost:8000/health        -> {"service":"ok","db":"ok"}
+#         curl http://localhost:8000/company/aapl  -> pivoted financials JSON
 
 # 3. Frontend (apps/web) — in a new terminal, from the repo root
 npm install                                   # installs all workspaces (once)
@@ -92,7 +102,9 @@ npm run dev:web                               # http://localhost:3000
 ```
 
 Open <http://localhost:3000> — you should see **API: ok / Database: ok**, sourced
-through FastAPI from Postgres.
+through FastAPI from Postgres. Then open <http://localhost:3000/company/aapl> for
+real multi-year SEC financials + a filing list; click a 10-K to read it with a
+navigable section outline (Risk Factors, MD&A, …).
 
 To point at a hosted Postgres (Supabase/Neon) instead of Docker, set `DATABASE_URL`
 in `.env` to the provider's connection string (keep the `+psycopg` driver prefix) —

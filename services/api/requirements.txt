@@ -7,3 +7,9 @@ alembic==1.14.0
 # psycopg 3 (binary build = no local libpq/compiler needed on Windows).
 psycopg[binary]==3.2.3
 pydantic-settings==2.7.0
+# SEC EDGAR ingestion HTTP client (timeouts, headers).
+httpx==0.28.1
+# HTML -> text for filing segmentation (uses stdlib html.parser; no compiled dep).
+beautifulsoup4==4.12.3
+# Test runner for the golden fixture test.
+pytest==8.3.4

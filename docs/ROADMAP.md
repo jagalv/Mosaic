@@ -13,31 +13,34 @@ The goal of Phase 1 is a genuinely valuable, demoable product: research a few hu
 ### Milestone 0 — Skeleton that runs (a few days)
 Get the boring infra green *before* writing features. It's demoralizing to fight deploys later with real code at stake.
 
-- [ ] Initialize git repo, push to GitHub (private is fine for now)
-- [ ] Set up monorepo structure (`apps/web`, `services/`, `packages/`, `docs/`)
-- [ ] `.gitignore` (node_modules, `.env`, `__pycache__`, `data/`) and `.env.example`
-- [ ] Next.js app deployed to Vercel showing a placeholder page
-- [ ] Postgres created (Supabase or Neon), connection working from local
-- [ ] Auth wired up — you can sign up and log in
-- [ ] Confirm the full loop works: local → GitHub → deployed site → database
+- [x] Initialize git repo (committed locally — push to GitHub still pending)
+- [x] Set up monorepo structure (`apps/web`, `services/`, `packages/`, `docs/`)
+- [x] `.gitignore` (node_modules, `.env`, `__pycache__`, `data/`) and `.env.example`
+- [x] Postgres running locally (Docker + pgvector), connection verified `DB: ok`
+- [x] Local loop works: browser → FastAPI → Postgres → browser (health check green)
+- [ ] **DEFERRED →** Next.js app deployed to Vercel (intentionally out of scope for the local-pipeline session)
+- [ ] **DEFERRED →** Auth wired up — sign up / log in (intentionally deferred; do before Milestone 4)
+- [x] Push repo to GitHub (`jagalv/mosaic` — make public once presentable)
 
-**Demo:** a deployed page you can log into, talking to a real database.
+**Status:** Local skeleton ✅ green and committed. Vercel deploy + auth consciously deferred — not blockers for Milestone 1.
+
+**Demo:** local health check shows **API: ok / Database: ok** end-to-end.
 
 ### Milestone 1 — One company, real data (≈1 week)
-- [ ] Pick ~10 companies (e.g. AAPL, MSFT, NVDA…) to start
-- [ ] SEC ingestion for just these: pull submissions + companyfacts (XBRL) → store in Postgres
-- [ ] Define core schema: `companies`, `financials`, `filings`
-- [ ] Set descriptive `User-Agent` for EDGAR; respect ~10 req/s
-- [ ] Company page renders: name, sector, multi-year financial-statements table
-- [ ] Golden fixture test: assert known financial values for a known filing
+- [x] Pick ~10 companies (e.g. AAPL, MSFT, NVDA…) to start
+- [x] SEC ingestion for just these: pull submissions + companyfacts (XBRL) → store in Postgres
+- [x] Define core schema: `companies`, `financials`, `filings`
+- [x] Set descriptive `User-Agent` for EDGAR; respect ~10 req/s
+- [x] Company page renders: name, sector, multi-year financial-statements table
+- [x] Golden fixture test: assert known financial values for a known filing
 
 **Demo:** real SEC financial data rendering on a real company page. No AI yet.
 
 ### Milestone 2 — Filings on the page (≈1 week)
-- [ ] Fetch + store recent 10-K / 10-Q filings for the starter companies (raw text → R2)
-- [ ] `filing_sections` table; segment filings by structure (Item 1A Risk Factors, Item 7 MD&A, etc.)
-- [ ] Filing list on the company page
-- [ ] Filing reader view with navigable sections
+- [x] Fetch + store recent 10-K / 10-Q filings for the starter companies (raw text → Postgres; R2 deferred — see DECISIONS)
+- [x] `filing_sections` table; segment filings by structure (Item 1A Risk Factors, Item 7 MD&A, etc.) — 10-K; 10-Q text stored, sectioning deferred
+- [x] Filing list on the company page
+- [x] Filing reader view with navigable sections
 
 **Demo:** you can read a filing inside your app, jump to Risk Factors / MD&A.
 

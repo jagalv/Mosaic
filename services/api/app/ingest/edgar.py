@@ -50,19 +50,22 @@ def _throttle() -> None:
     _last_request_at = time.monotonic()
 
 
-def _get_json(url: str, cache_name: str, refresh: bool = False) -> dict:
-    """Return parsed JSON from cache, or fetch + cache it."""
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache_path = CACHE_DIR / cache_name
-
+def _get_text(url: str, cache_path: Path, refresh: bool = False) -> str:
+    """Return raw response text from cache, or fetch + cache it."""
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
     if cache_path.exists() and not refresh:
-        return json.loads(cache_path.read_text(encoding="utf-8"))
+        return cache_path.read_text(encoding="utf-8")
 
     _throttle()
     resp = httpx.get(url, headers={"User-Agent": _user_agent()}, timeout=30.0)
     resp.raise_for_status()
     cache_path.write_text(resp.text, encoding="utf-8")
-    return resp.json()
+    return resp.text
+
+
+def _get_json(url: str, cache_name: str, refresh: bool = False) -> dict:
+    """Return parsed JSON from cache, or fetch + cache it."""
+    return json.loads(_get_text(url, CACHE_DIR / cache_name, refresh))
 
 
 def fetch_company_tickers(refresh: bool = False) -> dict:
@@ -83,6 +86,11 @@ def fetch_companyfacts(cik: int | str, refresh: bool = False) -> dict:
         f"companyfacts_CIK{padded}.json",
         refresh,
     )
+
+
+def fetch_filing_document(url: str, accession_no: str, refresh: bool = False) -> str:
+    """Fetch a filing's primary document HTML, cached to data/edgar/filings/."""
+    return _get_text(url, CACHE_DIR / "filings" / f"{accession_no}.html", refresh)
 
 
 def resolve_cik(ticker: str, tickers_data: dict) -> int:

@@ -6,16 +6,56 @@ concept-map order; only line items the company actually reports are included.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
 from app.ingest.concepts import LINE_ITEMS, STATEMENT_ORDER
-from app.models import Company, Financial
+from app.models import Company, Filing, FilingDocument, FilingSection, Financial
 
 router = APIRouter()
 
 MAX_YEARS = 5
+MAX_FILINGS = 25
+
+
+def _filings_list(db: Session, cik: int) -> list[dict]:
+    """Recent filings with whether each has an ingested, segmented document."""
+    filings = db.scalars(
+        select(Filing)
+        .where(Filing.cik == cik)
+        .order_by(Filing.filing_date.desc())
+        .limit(MAX_FILINGS)
+    ).all()
+    ids = [f.id for f in filings]
+    if not ids:
+        return []
+
+    with_doc = set(
+        db.scalars(
+            select(FilingDocument.filing_id).where(FilingDocument.filing_id.in_(ids))
+        ).all()
+    )
+    section_counts = dict(
+        db.execute(
+            select(FilingSection.filing_id, func.count())
+            .where(FilingSection.filing_id.in_(ids))
+            .group_by(FilingSection.filing_id)
+        ).all()
+    )
+    return [
+        {
+            "accession_no": f.accession_no,
+            "form_type": f.form_type,
+            "filing_date": f.filing_date.isoformat() if f.filing_date else None,
+            "period_of_report": (
+                f.period_of_report.isoformat() if f.period_of_report else None
+            ),
+            "has_document": f.id in with_doc,
+            "section_count": section_counts.get(f.id, 0),
+        }
+        for f in filings
+    ]
 
 
 def _json_number(value) -> float | int:
@@ -65,4 +105,5 @@ def get_company(ticker: str, db: Session = Depends(get_session)) -> dict:
         "industry": company.industry,
         "years": years,
         "statements": statements,
+        "filings": _filings_list(db, company.cik),
     }

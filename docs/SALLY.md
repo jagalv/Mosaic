@@ -94,11 +94,16 @@ GitHub: `jagalv/mosaic`.
   HTML→text via bs4; TOC skipped by requiring a non-empty same-line heading title.
   `/filing/{accession}` endpoint + reader page with section nav. Golden segmentation test.
 
-**Next: Milestone 3 — "Ask this filing" (the wedge).** Section-aware chunking → local
-embeddings (pgvector) → hybrid retrieval (vector + full-text, RRF) → grounded cited answer
-endpoint that abstains when unsupported → AI panel deep-linking citations into the reader →
-an **eval gate** (golden Q&A measuring retrieval recall AND answer faithfulness). Spend real
-care here; it's the thesis.
+**Milestone 3 — "Ask this filing" (the wedge) — DONE ✅** (faithfulness 13/13, recall@8 = 1.00,
+numbers-guard flag-and-warn, clean-clone reproducibility proven). Chunking → local bge embeddings
+→ hybrid RRF retrieval → grounded cite-or-abstain endpoint → deep-linked citations + numbers guard.
+Migrations through `0005`. The thesis works.
+
+**Next: Milestone 4 — research workspace + auth (the long pole of Phase 1).** Per Vera's
+`docs/STATUS.md`, this is mostly unglamorous must-be-correct plumbing: watchlists/notes persistence,
+auth, and **row-level security with a cross-user security test** (one user must never read another's
+rows). Correctness > flash here. Read `docs/STATUS.md` + the reset `docs/ROADMAP.md` for scope and
+the Definition of Complete before writing Alexander's M4 prompt.
 
 **Roadmap beyond:** M4 research workspace (memos/notes/watchlists + auth), then comparison/
 screening, memo generation, portfolio, macro. See `ROADMAP.md`.
@@ -171,23 +176,25 @@ for him; use `findstr`.
 
 ---
 
-## 6.5 YOUR FIRST TASK — the Milestone 3 prompt
+## 6.5 YOUR FIRST TASK — the Milestone 4 prompt
 
-Your immediate job is to get Alexander building Milestone 3 (the wedge) well. **A strong draft
-prompt is already saved at `docs/prompts/milestone-3.md`** — the previous Sally wrote it. Do not
-start from scratch:
+Milestones 0–3 are done (the wedge works). **Your first job is to get Alexander building
+Milestone 4 — research workspace + auth — well.** This is the long pole of Phase 1 per Vera's
+`docs/STATUS.md`: unglamorous, must-be-correct persistence and security plumbing.
 
-1. Read `docs/prompts/milestone-3.md` plus the current ROADMAP/WORKLOG/DECISIONS in case
-   anything shifted since it was written.
-2. Refine it if needed, then give it to Alexander (have him `/compact` first if his context is heavy).
-3. It forces a PLAN-ONLY-THEN-STOP. **When he posts his plan, bring it back to James and review
-   it before approving** — scrutinize the chunking strategy, the grounding/citation prompt, and
-   especially the eval thresholds. This is the milestone where a weak design produces convincing-
-   but-wrong answers, so this review is the most important one you'll do.
-4. Confirm James has done the two prerequisites flagged in the prompt: a free LLM API key in
-   `.env` (default Gemini Flash) and acceptance of the heavier embedding deps.
+1. Read `docs/STATUS.md` (Vera's audit + Definition of Complete) and the reset `docs/ROADMAP.md`
+   for M4 scope, plus the latest WORKLOG/DECISIONS.
+2. Write Alexander's M4 prompt in the house style: ORIENT → CONFIRM SCOPE → PLAN-ONLY-THEN-STOP,
+   decisive on locked choices, decisions surfaced, definition of done, don't auto-commit.
+3. The hard part to name and pin: **row-level security** — a user must never read another user's
+   watchlists/notes. Require a **cross-user security test** that proves isolation; treat auth/RLS
+   as the "go slow, own it" path (like the grounding spine in M3). Correctness > flash.
+4. When Alexander posts his plan, review it with James before approving — scrutinize the auth
+   model and the RLS test especially.
 
-This is the thesis of the whole product. Spend real care.
+Goal reminder: this is a **personal portfolio + personal-use** project (see DECISIONS) — auth
+exists for real per-user data and to show you can build it, not for scale. Optimize for working,
+reproducible, recruiter-cloneable software.
 
 ---
 

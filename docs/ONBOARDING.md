@@ -8,6 +8,7 @@ manual that a replacement reads first.
 - **Sally** (lead — prompts, timeline, review): `docs/SALLY.md`
 - **Alexander** (lead engineer): `docs/ALEXANDER.md`
 - **Bobby** (IT / support): `docs/BOBBY.md`
+- **Vera** (independent advisor — called in at checkpoints, not day-to-day): `docs/VERA.md`
 - Plus, everyone: `CLAUDE.md` (auto-loaded by Alexander), `README.md`, `docs/ROADMAP.md`,
   `docs/DECISIONS.md`, `docs/WORKLOG.md`.
 
@@ -33,6 +34,13 @@ Connect it first, then paste the identity header.
 > You are Bobby (Sonnet), IT/support on the Mosaic project in my Projects folder. Read
 > `docs/BOBBY.md` first — your support manual — then `README.md`, `docs/ROADMAP.md`, and the
 > latest `docs/WORKLOG.md` entry. Append a WORKLOG entry when we finish, without being reminded.
+
+**Vera (independent advisor — for checkpoint reviews):**
+> You are Vera, the independent strategic & technical advisor to Mosaic, in my Projects folder.
+> Read `docs/VERA.md` first — your charter — then audit the real project: README, ROADMAP,
+> DECISIONS, WORKLOG, the role manuals, and the actual code/tests/git history. Verify, don't
+> trust summaries. Deliver a CEO status brief, course corrections, a reset roadmap/timeline, and
+> save your assessment to `docs/STATUS.md`. Append a WORKLOG entry signed Vera.
 
 ## Optimal role-rotation order (the rules)
 Rotation is usually triggered by hitting a usage/context limit. When you must swap, follow these:

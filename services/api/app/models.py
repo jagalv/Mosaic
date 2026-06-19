@@ -195,6 +195,8 @@ class AiInteraction(Base):
     prompt_tokens: Mapped[int | None] = mapped_column(Integer)
     completion_tokens: Mapped[int | None] = mapped_column(Integer)
     abstained: Mapped[bool | None] = mapped_column(Boolean)
+    # Numbers-guard result: figures in the answer not found in retrieved text.
+    unsupported_numbers: Mapped[list | None] = mapped_column(JSON)
     cached: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     feedback: Mapped[str | None] = mapped_column(String)
 
@@ -219,6 +221,9 @@ class AnswerCache(Base):
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     retrieved_chunk_ids: Mapped[list | None] = mapped_column(JSON)
     abstained: Mapped[bool | None] = mapped_column(Boolean)
+    # Numbers-guard result, persisted so a cache hit warns identically to a fresh
+    # answer.
+    unsupported_numbers: Mapped[list | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

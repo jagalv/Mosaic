@@ -172,6 +172,16 @@ export function FilingReader({ filing }: { filing: FilingData }) {
                 citations={result.citations}
                 onCite={setActive}
               />
+              {result.unsupported_numbers.length > 0 ? (
+                <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+                  ⚠ Figure{result.unsupported_numbers.length === 1 ? "" : "s"}{" "}
+                  <span className="font-medium">
+                    {result.unsupported_numbers.join(", ")}
+                  </span>{" "}
+                  not found verbatim in the cited text — verify against the source
+                  before relying on {result.unsupported_numbers.length === 1 ? "it" : "them"}.
+                </p>
+              ) : null}
               <p className="mt-3 text-xs text-muted-foreground">
                 {result.abstained
                   ? "No supported answer found in this filing."

@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session
 
 from app.llm import LLMClient, get_llm_client
+from app.rag.guard import unsupported_numbers
 from app.rag.retrieve import DEFAULT_TOP_K, RetrievedChunk, retrieve
 
 ABSTAIN_TEXT = "Not stated in the filings."
@@ -61,6 +62,9 @@ class AnswerResult:
     answer: str
     abstained: bool
     citations: list[Citation]
+    # Significant figures in `answer` not found in the retrieved text. Non-empty
+    # => the caller flags-and-warns (the answer is still shown — see guard.py).
+    unsupported_numbers: list[str]
     retrieved: list[RetrievedChunk]  # everything retrieved (for logging/debug)
     provider: str
     model: str
@@ -130,6 +134,7 @@ def answer_question(
             answer=ABSTAIN_TEXT,
             abstained=True,
             citations=[],
+            unsupported_numbers=[],
             retrieved=[],
             provider=getattr(client, "provider", "unknown"),
             model=getattr(client, "model", "unknown"),
@@ -141,11 +146,21 @@ def answer_question(
     result = client.generate(SYSTEM_PROMPT, _build_user_prompt(question, chunks))
     abstained = _is_abstention(result.text)
     citations = [] if abstained else _extract_citations(result.text, chunks)
+    # Numbers guard: verify every significant figure traces to the retrieved
+    # text. An abstention has no figures to check.
+    unsupported = (
+        []
+        if abstained
+        else unsupported_numbers(
+            result.text, "\n".join(c.content_text for c in chunks)
+        )
+    )
 
     return AnswerResult(
         answer=result.text,
         abstained=abstained,
         citations=citations,
+        unsupported_numbers=unsupported,
         retrieved=chunks,
         provider=getattr(client, "provider", "unknown"),
         model=result.model,

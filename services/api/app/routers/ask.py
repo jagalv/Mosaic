@@ -50,6 +50,7 @@ def _log_interaction(
     prompt_tokens: int | None,
     completion_tokens: int | None,
     abstained: bool,
+    unsupported_numbers: list[str],
     cached: bool,
 ) -> None:
     db.add(
@@ -64,6 +65,7 @@ def _log_interaction(
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             abstained=abstained,
+            unsupported_numbers=unsupported_numbers,
             cached=cached,
         )
     )
@@ -99,6 +101,7 @@ def ask_filing(
     if cached is not None:
         # `retrieved_chunk_ids` holds the citation objects (JSON) for this cache.
         citations = cached.retrieved_chunk_ids or []
+        unsupported = cached.unsupported_numbers or []
         _log_interaction(
             db,
             filing_id=filing.id,
@@ -111,12 +114,14 @@ def ask_filing(
             prompt_tokens=0,
             completion_tokens=0,
             abstained=bool(cached.abstained),
+            unsupported_numbers=unsupported,
             cached=True,
         )
         return {
             "answer": cached.answer,
             "abstained": bool(cached.abstained),
             "citations": citations,
+            "unsupported_numbers": unsupported,
             "cached": True,
             "provider": provider,
             "model": model,
@@ -145,6 +150,7 @@ def ask_filing(
             answer=result.answer,
             retrieved_chunk_ids=citations,
             abstained=result.abstained,
+            unsupported_numbers=result.unsupported_numbers,
         )
     )
     _log_interaction(
@@ -159,6 +165,7 @@ def ask_filing(
         prompt_tokens=result.prompt_tokens,
         completion_tokens=result.completion_tokens,
         abstained=result.abstained,
+        unsupported_numbers=result.unsupported_numbers,
         cached=False,
     )
 
@@ -166,6 +173,7 @@ def ask_filing(
         "answer": result.answer,
         "abstained": result.abstained,
         "citations": citations,
+        "unsupported_numbers": result.unsupported_numbers,
         "cached": False,
         "provider": provider,
         "model": result.model,

@@ -66,31 +66,37 @@ mosaic/
 
 ## Running locally
 
-Milestone 0 skeleton: a health check that flows **browser → FastAPI → Postgres → browser**.
+Full local stack: real SEC financials, a filing reader, and the "Ask this filing"
+RAG demo — **browser → FastAPI → Postgres (pgvector) → browser**.
 
 **Prerequisites:** Docker Desktop, Node 20+, Python 3.11+.
 
 ```bash
 # 0. Env — copy the examples (real .env files stay gitignored)
-cp .env.example .env                          # repo root (DB + API config)
+cp .env.example .env                          # repo root (DB + API + LLM config)
 cp apps/web/.env.local.example apps/web/.env.local
 
 # 1. Database — start local Postgres (pgvector) and wait for it to be healthy
 docker compose up -d
 docker compose ps                             # STATUS should show "healthy"
 
-# 2. Backend (services/api) — venv, deps, migrate, run
+# 2. Backend (services/api) — venv, deps, migrate
 cd services/api
 py -m venv .venv                              # Windows; use python3 on macOS/Linux
 .venv/Scripts/activate                        # macOS/Linux: source .venv/bin/activate
+# IMPORTANT: install CPU-only torch FIRST, or pip pulls the ~2.5GB CUDA wheel.
+# (torch backs the local bge embedding model used by the RAG step.)
+pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
-alembic upgrade head                          # creates schema (health_check + companies/filings/financials)
+alembic upgrade head                          # creates all schema (M0–M3)
 
 # 2a. Ingest SEC data for the 10 starter companies (requires SEC_USER_AGENT in .env).
 #     Caches raw EDGAR JSON/HTML to data/ so reruns don't re-hit SEC; idempotent.
 python -m app.ingest.run                      # financials (companies/filings/financials)
 python -m app.ingest.documents                # filing text + 10-K section segmentation
-pytest                                         # golden tests: AAPL FY2023 numbers + 10-K sections
+python -m app.ingest.chunk                    # M3: section-aware retrieval chunks
+python -m app.ingest.embed                    # M3: local bge embeddings -> pgvector
+pytest                                         # golden tests: numbers, sections, chunking, guard, Q&A
 
 uvicorn app.main:app --reload --port 8000
 # verify: curl http://localhost:8000/health        -> {"service":"ok","db":"ok"}
@@ -101,10 +107,17 @@ npm install                                   # installs all workspaces (once)
 npm run dev:web                               # http://localhost:3000
 ```
 
+**For "Ask this filing":** set `GEMINI_API_KEY` in `.env` (free key:
+<https://aistudio.google.com/apikey>). Without a key, set `LLM_PROVIDER=mock` to
+exercise the full pipeline offline. The free tier is ~20 requests/day per model;
+`answer_cache` absorbs repeats. The numbers guard flags any figure in an answer
+that isn't found in the cited source text.
+
 Open <http://localhost:3000> — you should see **API: ok / Database: ok**, sourced
 through FastAPI from Postgres. Then open <http://localhost:3000/company/aapl> for
 real multi-year SEC financials + a filing list; click a 10-K to read it with a
-navigable section outline (Risk Factors, MD&A, …).
+navigable section outline (Risk Factors, MD&A, …) and ask it a question with
+cited, deep-linked answers.
 
 To point at a hosted Postgres (Supabase/Neon) instead of Docker, set `DATABASE_URL`
 in `.env` to the provider's connection string (keep the `+psycopg` driver prefix) —

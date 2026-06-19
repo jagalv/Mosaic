@@ -6,6 +6,69 @@ How to use this file: work top to bottom. Each **milestone** ends in something y
 
 ---
 
+## Vera's reset — 2026-06-19 (read this first)
+
+I reviewed the real repo at the M3 checkpoint. The build is strong and the wedge works. This
+section recalibrates the plan to reality; the milestone list below is unchanged in *shape*, but
+the estimates were fantasy-optimistic in the original (M3 was budgeted at 1.5–2 weeks and landed in
+~2 days of AI-assisted work). Full assessment in `docs/STATUS.md`.
+
+**What I changed and why:**
+- Added a **Definition of Complete** (below) — the original roadmap never said what "done" means,
+  so "done" had drifted to "passes on the dev machine." That's the gap that nearly shipped M3 with
+  a repo no one else can run.
+- Re-tagged effort estimates to **AI-assisted-solo reality** (focused-session sizes, not
+  calendar weeks), while keeping honest buffers for the two things that actually eat time: messy
+  data plumbing and the Gemini free-tier throttle.
+- Added a **"Close-out M3" block** — M3 is ~95%, not done. The remaining 5% is reproducibility +
+  two abstention checks + a clean commit, and it gates everything else.
+
+**Definition of Complete (applies to every milestone from now on):**
+A milestone is *done* only when **all** of these are true — not just "it works for me":
+1. A **clean clone** (`git clone` → documented setup steps → run) starts and demos the feature.
+   That means deps are pinned in `requirements.txt`/`package.json` and every new env var is in
+   `.env.example`. ("Works in my venv" is not done.)
+2. The feature's **trust claim is tested**, not just asserted (golden fixtures for numbers, golden
+   Q&A for answers, a security test for access control).
+3. **`main` is committed clean** — no pile of uncommitted changes, WORKLOG appended, ROADMAP boxes
+   ticked, DECISIONS entry if a real choice was made.
+
+**What "shippable" means for Mosaic, concretely:**
+- **Demo-ready (≈0.5–1 focused session, basically here):** clean clone boots; a real cited answer
+  on ≥2 companies verified live; M3 closed and committed clean. This is the portfolio screenshot.
+- **v1 / portfolio-shippable (≈1–1.5 weeks):** the above + M4 (watchlists, notes, row-level
+  security + the cross-user security test) so it's a *persistent personal tool*, not a stateless
+  lookup + the "Make it presentable" block (public repo, README screenshots/GIF) + an expanded,
+  honest eval (≥30 Qs / ≥5 companies, incl. numeric) and a runtime numbers guard + auth (deferred
+  since M0, due before M4).
+- **Personal-use real:** overlaps v1 — usable for your own research once notes/watchlists persist
+  and the corpus is a bit wider.
+
+**Honest completion estimate for Phase 1 v1:** ~**2–3 focused weeks** of calendar time at the
+current cadence. The bulk of that is **M4's auth + RLS + security test** — the unglamorous,
+must-be-correct plumbing this very roadmap warns is where projects stall (see "Where the time
+really goes"). The AI features are the fast part; they're largely behind you.
+
+### Close-out M3 (do before anything else — ≈1 focused session)
+- [x] ~~Pin the M3 runtime deps~~ — **already pinned** (Vera read stale copies): `requirements.txt`
+      has pgvector/sentence-transformers/google-genai; torch is a documented CPU-index pre-step.
+      Verified on a clean venv (torch stayed `+cpu`, API imports, pytest 33/33).
+- [x] ~~Add M3 env vars to `.env.example`~~ — **already present** (`GEMINI_API_KEY`, `LLM_MODEL`,
+      `EMBEDDING_MODEL`). Confirmed by direct read.
+- [x] **Clean clone boots** — fresh venv → CPU torch → `pip install -r requirements.txt` → API
+      imports + full pipeline answers end-to-end (mock); pytest 33/33 on the clean venv. README
+      install section smoothed (torch-first, chunk/embed steps, key/mock note).
+- [x] **Runtime numbers guard** — `app/rag/guard.py`: any answer figure not found in retrieved
+      text is flagged (flag-and-warn, shown in the reader). 8 tests; migration `0005` persists it.
+- [x] **2 abstention checks** (`appstore-dau`, `msft-cfo-salary`) — both abstain. Faithfulness = 13/13.
+- [x] **Live cited-answer check** — a real net-sales answer's footnotes resolve to the
+      segment/income-statement source spans containing the figures; numbers guard passed (no
+      false-fire on the correct figures).
+- [ ] **Commit a clean tree** — first confirm `git status` in your own terminal is sane (sandbox
+      shows phantom staged deletions = lag; verify before committing). *(only open M3 item)*
+
+---
+
 ## Phase 1 — Foundation & the Wedge
 
 The goal of Phase 1 is a genuinely valuable, demoable product: research a few hundred companies end-to-end and get cited answers from their filings. Reach the hard, differentiating feature (Milestone 3) as early as is sane.
@@ -44,7 +107,7 @@ Get the boring infra green *before* writing features. It's demoralizing to fight
 
 **Demo:** you can read a filing inside your app, jump to Risk Factors / MD&A.
 
-### Milestone 3 — The wedge: "Ask this filing" ← THE IMPORTANT ONE (≈1.5–2 weeks)
+### Milestone 3 — The wedge: "Ask this filing" ← ✅ DONE (2026-06-19)
 This milestone proves the entire thesis. Spend real care here.
 
 - [x] Section-aware chunking with metadata (`cik, accession_no, form_type, section, fiscal_period, char_range`)
@@ -53,11 +116,12 @@ This milestone proves the entire thesis. Spend real care here.
 - [x] Grounded answer endpoint: answer ONLY from retrieved context; cite chunk IDs; return "not stated in the filings" when unsupported — *verified: 10/10 answerable grounded+cited; abstains.*
 - [x] AI panel UI: footnotes that deep-link to the source paragraph — *built, `next build` clean (grouped-citation deep-links handled).*
 - [x] Build a golden Q&A set (10–20 questions with known answers + source spans) — *13 Qs (10 answerable, multi-span; 3 unanswerable), self-validating.*
-- [~] Check faithfulness (every claim supported?) and retrieval recall@k before trusting it — *recall@8 = 1.00 ✓; faithfulness 10/10 answerable grounded + 1/3 abstention confirmed; **2/3 abstentions pending free-tier quota reset.***
+- [x] Check faithfulness (every claim supported?) and retrieval recall@k before trusting it — *recall@8 = 1.00; **faithfulness = 13/13 = 1.00** (gemini-2.5-flash-lite): 10/10 answerable grounded with real citations, 3/3 unanswerable abstain.*
 - [x] `ai_interactions` log: prompt, retrieved chunk IDs, latency, tokens, feedback
 - [x] `answer_cache` for repeated questions per filing (key includes provider+model)
+- [x] **Runtime numbers guard** (trust spine): flag any answer figure not found in the retrieved text (flag-and-warn; shown in the reader) — `app/rag/guard.py`, migration `0005`.
 
-**Status (near-complete):** `main` green (`pytest` 25/25, `next build` clean). **recall@8 = 1.00** (OR keyword + company-name strip + corrected multi-span eval key). **Faithfulness (gemini-2.5-flash-lite): 10/10 answerable answered with grounded citations, 0 hallucinations; 1/3 unanswerable confirmed abstaining.** Remaining to fully close M3: confirm the last 2 abstention cases once the ~20/day Gemini free-tier quota resets (blocked today; not a code issue). Found+fixed a grouped-citation parsing bug and a broken default model id along the way.
+**Status: ✅ DONE.** `main` green (`pytest` 33/33 on dev **and** a clean venv; `next build` clean; clean-clone boot + full migration chain verified on an empty DB). **recall@8 = 1.00**; **faithfulness = 13/13 = 1.00** (gemini-2.5-flash-lite): 10/10 answerable grounded with real citations, 3/3 unanswerable abstain. Trust spine has a runtime numbers guard (verified live: correct figures pass, no false-fire). Live check: a real net-sales answer's footnotes deep-link to the segment/income-statement spans that contain the cited figures. Only open item is James's clean commit (sandbox git lag — verify `git status` in a real terminal first).
 
 **Demo:** ask a real question about a real filing, get a cited answer that links to the source. This is the "oh, that's actually useful" moment.
 

@@ -5,6 +5,43 @@ genuine decision — not a changelog.
 
 ---
 
+## 2026-06-19 — Runtime numbers guard: digit-core match, ≥4 digits, flag-and-warn
+
+**Decision:** Every significant figure an answer emits is checked in code against
+the retrieved text (`app/rag/guard.py`), not just trusted to the prompt. Matching
+is by **digit-core** (strip `$`, commas, `%`, decimals, scale words → compare digit
+substrings), so `$383,285 million` / `383,285` / `383285000000` all match a source
+`383,285`. Only **≥4-digit** cores are checked. When a figure isn't found, the
+policy is **flag-and-warn** (show the answer, surface the figure as unverified),
+not withhold/abstain. Result is surfaced in `/ask`, persisted (migration `0005`),
+and shown as a warning banner in the reader.
+
+**Why:** "No fabricated figures" is Mosaic's core promise and was defended only by
+a prompt + `temperature=0` + a small eval (Vera's AT-RISK). The ≥4-digit threshold
+keeps false positives down — small numbers, 2-digit percentages, and `10-K` collide
+spuriously. Flag-and-warn (James's call) over hard-abstain because the one case the
+digit-core method can't catch — a *re-scaled* figure ("383.3 billion" from a
+"383,285 million" source, which would need unit-aware table parsing to match) — is a
+false *negative-of-matching* that would otherwise wrongly nuke a correct answer; for
+a personal-use tool, warning + deep-links to verify beats silently dropping a good
+answer. Deliberately lightweight; not a general numeric-equivalence engine.
+
+## 2026-06-18 — Project objective: personal portfolio + personal use (NOT a startup)
+
+**Decision (James, CEO):** Mosaic's goals are (1) a tool James genuinely uses for
+investment research, and (2) a recruiter-impressive portfolio piece. "Startup-capable /
+defensibility / monetization" is explicitly DROPPED as a goal (per Vera's review: the
+moat is thin and chasing it isn't worth it).
+
+**Why:** Frees us to optimize for daily personal usefulness and for "a recruiter can
+clone, run, and be impressed" — and to stop spending effort on moats, paid data, or
+commercialization.
+
+**How to apply:** Prioritize working software, clean-clone reproducibility, polish, and
+the trust spine over any growth/moat work. This SUPERSEDES the "startup potential" goal
+listed in the role manuals (`SALLY.md`, `VERA.md`) — future advisors should measure
+against portfolio + personal use only.
+
 ## 2026-06-18 — Milestone 3 RAG stack: bge-small (384d) + section-aware chunks + RRF + Gemini Flash
 
 **Decision:** The "Ask this filing" pipeline is: section-aware sub-chunks

@@ -24,6 +24,58 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 ---
 
 ### 2026-06-19 — Alexander (Claude Code)
+**Prompted to:** Final M3 close-out — run the quota-gated checks (full faithfulness eval + live UI/citation/guard check) and, if they pass, mark Milestone 3 DONE.
+**Did:**
+- Ran `python -m app.eval.run_eval --llm` on **gemini-2.5-flash-lite** (daily quota had reset). Completed full set.
+- Live check via the `/ask` endpoint + `content_text` slicing (the exact path the reader renders): asked AAPL FY2025 a net-sales question, resolved each citation's char range to its source span, inspected the numbers-guard result.
+- Ticked the remaining M3 ROADMAP boxes (faithfulness, close-out 2 abstentions + live check) and marked **Milestone 3 DONE**. No new DECISIONS entry — no new architectural choice this session (verification only), per "one entry per genuine decision."
+**Verified:** **Faithfulness = 13/13 = 1.00** — 10/10 answerable answered with real citations (recall_hit on all); **3/3 unanswerable abstained**, including the previously-pending `appstore-dau` and `msft-cfo-salary`. recall@8 = 1.00. Live: answer "$416,161M (FY2025) / $391,035M (FY2024)" cited [1,5,6,7] → those char ranges land on the segment table (components sum to 416,161) and the income-statement header; **numbers guard returned [] (no false-fire on the correct figures)**. `pytest` 33/33 green; no code changed this session.
+**Next / handoff:** **M3 is DONE.** Only open item is James's **clean commit** — confirm `git status` in a real terminal first (sandbox shows phantom deletions = lag). After that, M4 (persistence: watchlists/notes + auth/RLS + cross-user security test) is next, and it's the long pole (see Vera's STATUS.md / ROADMAP estimates). Suggested commit: `feat: m3 numbers guard + clean-clone docs; close out M3 (faithfulness 13/13, recall 1.00)`.
+**Roadmap:** Milestone 3 — all boxes ticked; **marked DONE**. Close-out block: everything done except the clean commit (James).
+
+---
+
+### 2026-06-19 — Alexander (Claude Code)
+**Prompted to:** M3 close-out — (1) build a runtime numbers guard (PLAN-first), (2) prove a clean-clone boot, (3) finish the 2 abstention evals + a live click-through. Goal is now personal portfolio + personal use. Don't "fix" the deps/env (Vera read stale copies).
+**Did:**
+- **Verified Vera's two "holes" were stale reads** — `requirements.txt` already pins pgvector/sentence-transformers/google-genai (torch = documented CPU pre-step), `.env.example` already has the 4 M3 vars. Changed nothing there.
+- **Task 1 — Numbers guard (approved plan, flag+warn):** new `app/rag/guard.py` (digit-core matching: drops `$`/commas/`%`/decimals/scale-words, substring-tests answer figures vs retrieved-text figures; **≥4-digit** scope to avoid spurious small-number collisions). Wired into `answer_question` → `AnswerResult.unsupported_numbers`; surfaced in `/ask` response, persisted to `answer_cache` + `ai_interactions` (migration `0005`), and shown as an amber warning banner in `reader.tsx`. 8 new tests (supported / fabricated / formatting / threshold / year / citation-not-a-number / 2 integration). Known limit documented: a *re-scaled* figure ("383.3 billion" from "383,285 million") won't match — exactly why policy is flag-and-warn, not withhold.
+- **Task 2 — Clean-clone boot:** built a fresh venv, ran the documented install (CPU torch first → `pip install -r requirements.txt`), confirmed torch stayed `+cpu` (no CUDA pull), API imports (9 routes), **pytest 33/33 on the clean venv**, and a full end-to-end mock answer with a real deep-link range. Smoothed the README "Running locally" (CPU-torch-first step, `chunk`+`embed` ingest steps, GEMINI_API_KEY/mock note) — no unpinning.
+- **Task 3 — partially blocked:** the clean venv reached Gemini correctly (got a 429, i.e. SDK/key/request all work) but the **per-day free-tier cap (20/model) on gemini-2.5-flash-lite is still exhausted today** — the 2 abstention checks + live cited click-through can't run until it resets.
+**Verified:** `pytest` 33/33 (dev venv **and** clean venv); `next build` clean; guard end-to-end via mock (response field + cache column persist); clean-venv boot proven. Numbers guard: fabricated `$999,999` flagged, `$383,285 million` vs `383,285` supported.
+**Next / handoff:** **Only quota-blocked items remain to fully close M3** (not code): when gemini-2.5-flash-lite's daily quota resets, run `python -m app.eval.run_eval --llm` (confirm `appstore-dau` + `msft-cfo-salary` abstain) and click one cited answer in the reader to confirm the footnote highlights truly-supporting text. Or use a sibling model with fresh daily quota (e.g. gemini-3.5-flash) if you want it done today — note the model. `main` green. Did NOT commit; **confirm `git status` in your own terminal first** (sandbox shows phantom deletions — lag). Suggested commit: `feat: m3 numbers guard (flag-and-warn) + clean-clone install docs`.
+**Roadmap:** M3 — added runtime numbers guard; close-out block: deps/env verified-already-correct, clean-clone boot ✓; 2 abstentions + live click-through + clean commit still open (quota/James).
+
+---
+
+### 2026-06-19 — Vera (independent advisor, Opus)
+**Prompted to:** Checkpoint review at M3 (the wedge): audit the real repo, score each charter
+dimension, name the top risks + highest-leverage move, reset ROADMAP, and write a durable STATUS.
+**Did:**
+- Read the real code/tests/migrations/git across `services/api` + `apps/web`, not summaries.
+  Verdict: **on-track and genuinely good**, with two cheap-but-mandatory holes before M3 is "done."
+- **Found: clean-clone reproducibility hole.** `requirements.txt` is missing 4 imported runtime
+  deps (`pgvector`, `sentence-transformers`, `torch`, `google-genai`); `models.py:12` imports
+  pgvector at module load, so a fresh `pip install` can't even start the API. `.env.example` is
+  missing `GEMINI_API_KEY`/`LLM_MODEL`/`EMBEDDING_MODEL`. Contradicts what was logged as done.
+- **Found: trust-spine numbers gap.** No runtime check that a number in an answer appears in the
+  retrieved excerpts; faithfulness proven on ~10 Qs / 2 companies with 2 abstentions still pending.
+- Wrote `docs/STATUS.md` (dated, scored, evidence-cited) and reset `docs/ROADMAP.md` (added a
+  Definition of Complete, a "Close-out M3" block, and honest AI-assisted-solo estimates).
+**Verified:** Confirmed in source — `requirements.txt`, `models.py:12`, `.env.example`, no numeric
+guard in `app/rag/`. recall@8=1.00 and 25/25 pytest are consistent with the code but NOT re-run
+in-sandbox (no DB/deps) — James to confirm in his terminal. **Caution:** sandbox `git status`
+showed phantom staged deletions of all core files (files are present/correct on disk — index lag);
+confirm `git status` in your own terminal before committing.
+**Next / handoff:** Highest-leverage move = one session to close the clean-clone gap + the 2
+abstention checks + a clean commit, before starting anything new. Then M3 is truly done and the
+repo is shareable. Full Start/Stop/Change in STATUS.md. Did NOT commit (per protocol — James commits).
+**Roadmap:** No checkboxes changed. Added Vera reset section + "Close-out M3" block + Definition of
+Complete; M3 stays ~95% until the close-out items land.
+
+---
+
+### 2026-06-19 — Alexander (Claude Code)
 **Prompted to:** Close M3: (1) apply OR-based keyword fix in `app/rag/retrieve.py`, re-run eval, report ACTUAL recall (≥0.9); (2) run faithfulness with the GEMINI_API_KEY. Stop + report if recall still weak after the fix.
 **Did:**
 - **Keyword fix (retrieve.py):** `_keyword_terms()` lowercases/tokenizes/drops stopwords + OR-joins into `to_tsquery` (was AND `websearch_to_tsquery`). Added `_company_stop_tokens()` — in single-filing search the filing's own company name is in nearly every chunk, and Postgres `ts_rank` has no IDF, so the name + common terms drown the answer chunk; dropping the company name is what actually moved recall. Semantic path untouched.

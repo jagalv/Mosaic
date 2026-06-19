@@ -76,6 +76,7 @@ export interface AskResponse {
   answer: string;
   abstained: boolean;
   citations: AskCitation[];
+  unsupported_numbers: string[]; // figures not found verbatim in retrieved text
   cached: boolean;
   provider: string;
   model: string;

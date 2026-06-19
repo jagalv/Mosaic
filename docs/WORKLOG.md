@@ -23,6 +23,25 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-19 — Sally (Opus) — RETIRING / HANDOFF
+**Prompted to:** Hand the lead role to a new Sally and ensure a clean, high-bar onboarding.
+**Did:** Milestones 0–3 are complete, committed, and pushed (the wedge works: grounded, cited,
+numbers-guarded Q&A over real filings). Updated `docs/SALLY.md` — first task is now the **Milestone 4**
+prompt (research workspace + auth/RLS, with a cross-user security test as the must-be-correct core),
+and added a "raise the bar" section of hardest-won lessons. Recorded the project objective (personal
+portfolio + personal use, NOT startup) in DECISIONS. Created Vera's advisor charter (`docs/VERA.md`);
+her audit is in `docs/STATUS.md` and the reset roadmap.
+**Verified:** Confirmed M3 done against real files (guard.py, migration 0005 sequential, 33 tests);
+caught that Vera's "deps missing / clean clone can't boot" was a sandbox mount-lag stale read — deps
+were already pinned; Alexander then proved a clean-clone boot.
+**Next / handoff:** New Sally: read `docs/SALLY.md` first (esp. §6.5 first task + the raise-the-bar
+section), then `docs/STATUS.md` + `docs/ROADMAP.md`, and write Alexander's Milestone 4 prompt. Team
+unchanged: Alexander (engineer), Bobby (IT), Vera (advisor, on call). Onboarding header in
+`docs/ONBOARDING.md`.
+**Roadmap:** No code change. M0–M3 done; M4 (auth/RLS workspace) is next, the long pole of Phase 1.
+
+---
+
 ### 2026-06-19 — Alexander (Claude Code)
 **Prompted to:** Final M3 close-out — run the quota-gated checks (full faithfulness eval + live UI/citation/guard check) and, if they pass, mark Milestone 3 DONE.
 **Did:**

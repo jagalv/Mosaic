@@ -23,6 +23,19 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-22 — Bobby (Sonnet 4.6) — Gemini key install + git index.lock fix + M4 commit
+**Prompted to:** Session onboarding; add Gemini API key; fix git commit failure; assist M4 commit.
+**Did:**
+- Added `GEMINI_API_KEY` to `.env` (gitignored, never committed). Key is on Gemini free tier; ~20 req/day empirically.
+- Diagnosed and fixed `git index.lock` collision (stale lock from crashed process → `Remove-Item .git\index.lock`).
+- M4 committed clean: `9b57fd0` — 70 files, 4878 insertions. Commit message: `feat: milestone 4 — auth + watchlists + notes + Postgres RLS (DB-enforced) + workspace UI`.
+- Briefed James on M4 scope (auth/RLS/watchlists/notes), Gemini free-tier limits, auth/RLS stack decision (open — Supabase Auth vs Clerk), and AI Product Manager as the job category matching this work.
+**Verified:** `git log --oneline -3` confirms `9b57fd0 (HEAD -> main)` above `origin/main`.
+**Next / handoff:** Run `git push` to push M4 to GitHub. AUTH_SECRET_KEY in `.env` is a dev placeholder — set a real one before any public/hosted deployment. Auth/RLS stack decision (Supabase Auth vs Clerk) is James's to make with Sally before M5 work begins. Phase 1 remainder: "Make it presentable" block (public repo, README screenshots/GIF).
+**Roadmap:** M4 confirmed committed. No new checkbox changes (M4 was already marked complete by Sally).
+
+---
+
 ### 2026-06-19 — Sally (Opus) — team transition + Vera end-of-Phase-1 review prepped
 **Prompted to:** Prep a fresh-Alexander chat transition + ready a neutral 3rd-party review for next session.
 **Did:** M4 complete (prior entry). Wrote a transition/kickoff prompt for a NEW Alexander chat (orient via

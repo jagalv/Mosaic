@@ -12,6 +12,7 @@ from decimal import Decimal
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -235,5 +236,100 @@ class AnswerCache(Base):
             "provider",
             "model",
             name="uq_answer_cache_key",
+        ),
+    )
+
+
+class User(Base):
+    """An application user (Milestone 4a auth).
+
+    `email` is stored lower-cased and is unique (case-insensitive identity without
+    needing the Postgres citext extension). `password_hash` is an argon2 hash —
+    never a plaintext or reversible value.
+    """
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class Watchlist(Base):
+    """A user's named watchlist (Milestone 4b). Row-level security restricts
+    every read/write to the owning user (enforced in the DB — migration 0007)."""
+
+    __tablename__ = "watchlists"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class WatchlistItem(Base):
+    """A company in a watchlist. `company_cik` references companies.cik (the
+    Company PK). RLS scopes items via their parent watchlist's owner."""
+
+    __tablename__ = "watchlist_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    watchlist_id: Mapped[int] = mapped_column(
+        ForeignKey("watchlists.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    company_cik: Mapped[int] = mapped_column(
+        ForeignKey("companies.cik"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "watchlist_id", "company_cik", name="uq_watchlist_company"
+        ),
+    )
+
+
+class Note(Base):
+    """A user's note, attached to EXACTLY ONE target — a company or a filing
+    (Milestone 4c). RLS restricts every read/write to the owning user (the same
+    enforced-in-DB pattern as watchlists; migration 0009)."""
+
+    __tablename__ = "notes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    # Exactly one of these is non-null (enforced by ck_notes_one_target).
+    company_cik: Mapped[int | None] = mapped_column(
+        ForeignKey("companies.cik"), index=True
+    )
+    filing_id: Mapped[int | None] = mapped_column(
+        ForeignKey("filings.id"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "(company_cik IS NOT NULL)::int + (filing_id IS NOT NULL)::int = 1",
+            name="ck_notes_one_target",
         ),
     )

@@ -13,9 +13,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mosaic",
-  description: "AI-powered investment research operating system.",
+  title: "Mosaic — AI investment research",
+  description:
+    "Ask any SEC filing and get cited, verifiable answers. An AI-powered investment research workspace.",
 };
+
+// Runs before first paint: applies the saved theme (default DARK — the intended
+// showcase; we deliberately do NOT follow OS preference). Toggling persists to
+// localStorage. Inline + blocking so there is no flash of the wrong theme.
+const themeScript = `
+(function () {
+  try {
+    var t = localStorage.getItem('theme');
+    var d = document.documentElement;
+    if (t === 'light') { d.classList.remove('dark'); }
+    else { d.classList.add('dark'); }
+  } catch (e) { document.documentElement.classList.add('dark'); }
+})();
+`;
 
 export default function RootLayout({
   children,
@@ -25,9 +40,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {children}
+      </body>
     </html>
   );
 }

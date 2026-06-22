@@ -22,9 +22,16 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # SQLAlchemy connection URL, e.g.
+    # ADMIN SQLAlchemy URL — the superuser `mosaic` role. Used by Alembic,
+    # ingestion, and eval (they need superuser / bulk). e.g.
     # postgresql+psycopg://mosaic:mosaic@localhost:5432/mosaic
     database_url: str = "postgresql+psycopg://mosaic:mosaic@localhost:5432/mosaic"
+
+    # APP SQLAlchemy URL — the NON-superuser `mosaic_app` role that every API
+    # request runs as, so Postgres RLS is actually enforced (a superuser bypasses
+    # RLS). REQUIRED for the API; there is deliberately NO fallback to
+    # database_url — falling back would re-open the RLS hole.
+    app_database_url: str = ""
 
     # Browser origins allowed to call the API. Comma-separated in the env var.
     cors_origins: str = "http://localhost:3000"
@@ -47,6 +54,13 @@ class Settings(BaseSettings):
     # ~20 req/day/model, so answer_cache matters.
     llm_model: str = "gemini-2.5-flash-lite"
     gemini_api_key: str = ""
+
+    # Auth (Milestone 4a). JWT signing secret — MUST be set to a real random value
+    # in any non-local environment; the default is dev-only. `auth_cookie_secure`
+    # gates the cookie `Secure` flag so login works over http://localhost in dev
+    # (set true behind HTTPS in prod).
+    auth_secret_key: str = "dev-insecure-change-me"
+    auth_cookie_secure: bool = False
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -20,5 +20,8 @@ pgvector==0.3.6
 sentence-transformers==3.3.1
 # Gemini client for grounded answers (Milestone 3). Needs GEMINI_API_KEY.
 google-genai==1.16.0
+# Auth (Milestone 4a): argon2 password hashing + JWT session cookies.
+argon2-cffi==23.1.0
+PyJWT==2.10.1
 # Test runner for the golden fixture test.
 pytest==8.3.4

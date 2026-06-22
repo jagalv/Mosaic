@@ -82,7 +82,8 @@ Get the boring infra green *before* writing features. It's demoralizing to fight
 - [x] Postgres running locally (Docker + pgvector), connection verified `DB: ok`
 - [x] Local loop works: browser → FastAPI → Postgres → browser (health check green)
 - [ ] **DEFERRED →** Next.js app deployed to Vercel (intentionally out of scope for the local-pipeline session)
-- [ ] **DEFERRED →** Auth wired up — sign up / log in (intentionally deferred; do before Milestone 4)
+- [x] Auth wired up — sign up / log in *(done 2026-06-19: backend in M4a — `users` + argon2 + JWT
+      httpOnly-cookie sessions + `get_current_user`; login/signup UI + server guard in M4d)*
 - [x] Push repo to GitHub (`jagalv/mosaic` — make public once presentable)
 
 **Status:** Local skeleton ✅ green and committed. Vercel deploy + auth consciously deferred — not blockers for Milestone 1.
@@ -126,14 +127,21 @@ This milestone proves the entire thesis. Spend real care here.
 **Demo:** ask a real question about a real filing, get a cited answer that links to the source. This is the "oh, that's actually useful" moment.
 
 ### Milestone 4 — It's an OS, not a lookup (≈1 week)
-- [ ] `watchlists` + `watchlist_items`, tied to the logged-in user
-- [ ] Persistent `notes` (per company / per filing)
-- [ ] Row-level security so a user only ever sees their own data
-- [ ] Security test: one user cannot read another user's rows
+- [x] `watchlists` + `watchlist_items`, tied to the logged-in user — *backend (M4b) + UI (M4d): /watchlist manager + company "Watch" popover*
+- [x] Persistent `notes` (per company / per filing) — *backend (M4c): per-target company/filing
+      (CHECK exactly-one), RLS forced + fail-closed owner policy; UI (M4d): inline NotesPanel on
+      company + filing pages, plus the /notes index*
+- [x] Row-level security so a user only ever sees their own data — *real Postgres RLS, FORCED, via
+      non-superuser `mosaic_app` role + `set_config` GUC (M4b; superuser-bypass fixed in migration 0008)*
+- [x] Security test: one user cannot read another user's rows — *`tests/test_rls.py`: DB + API
+      isolation, fail-closed, no pooling leak, commit-contract — now covers watchlists AND notes*
 
 **Demo:** come back the next day and your research, watchlist, and notes are all still there.
 
 ### End of Phase 1 — Make it presentable
+- [x] **Design-system + visual polish pass** (2026-06-19) — Linear/Vercel-grade modern fintech,
+      teal accent, dark-first; app shell, restyled hero/dashboard/company/reader, loading/error/404
+      states. See DECISIONS 2026-06-19 "Design system". (Trust spine preserved + verified.)
 - [ ] Make the repo public
 - [ ] Polish README; add screenshots / a short GIF
 - [ ] Fill in the "Running locally" section with real steps

@@ -5,6 +5,82 @@ genuine decision — not a changelog.
 
 ---
 
+## 2026-06-19 — M4 auth/RLS stack: local-first, DB-enforced Postgres RLS (no auth SaaS)
+
+**Decision (Sally, on James's delegation):** Milestone 4 auth + row-level security is built
+**local-first** on the existing Docker Postgres — no Supabase / Clerk / managed auth.
+- **Auth:** email + password. Passwords hashed with **argon2** (`argon2-cffi`; bcrypt via
+  `passlib` is an acceptable fallback if install snags). Session = a signed **JWT in an httpOnly,
+  Secure, SameSite=Lax cookie** (never localStorage). A `get_current_user` FastAPI dependency reads
+  + verifies the cookie. JWT signing secret comes from an env var (e.g. `AUTH_SECRET_KEY`) — in
+  `.env.example` as a placeholder, never hardcoded.
+- **RLS = real Postgres row-level security.** User-owned tables (`watchlists`, `watchlist_items`,
+  `notes`) get `ENABLE ROW LEVEL SECURITY` + policies keyed on
+  `current_setting('app.current_user_id')`. Each authenticated request opens a transaction and runs
+  `SET LOCAL app.current_user_id = <uid>` before any query, so isolation is enforced by the DB, not
+  app code. A **cross-user security test** proves user A can never read/write user B's rows — through
+  the DB and through the API.
+
+**Why:** Project goal is personal-use + recruiter-cloneable at ~$0 (see 2026-06-18 objective).
+Local RLS keeps the $0 / clone-and-run constraints (a recruiter runs `docker compose` + migrations,
+no third-party signup) AND is the most senior-grade, correct reading of "a user only ever sees their
+own data" — DB-enforced isolation with a real security test beats app-level checks. No new infra;
+building auth from scratch is itself a portfolio signal.
+
+**The gotcha to guard:** `SET LOCAL` must run inside the request's transaction (not globally on a
+pooled connection) or the user id leaks across pooled connections. The cross-user test must cover it.
+Two more for the cookie path: (1) `Secure` must be conditional on env so login works over
+`http://localhost` in dev; (2) cross-port cookies (3000→8000) need `credentials: "include"` +
+`allow_credentials=True` with a specific CORS origin (not `*`).
+
+**Amendment (2026-06-19, during M4b) — a dedicated non-superuser app role is REQUIRED.** The
+locked "single local role + `FORCE ROW LEVEL SECURITY`" turned out to be insufficient: the docker
+`mosaic` role is the bootstrap **superuser**, and a superuser (or any `BYPASSRLS` role) bypasses RLS
+*unconditionally* — `FORCE` only binds the table *owner*, never a superuser. M4b's security test
+correctly caught this (user A saw user B's rows). Resolution (Sally's call, still Option-A / $0 /
+clone-safe): a non-superuser role **`mosaic_app`** (`NOSUPERUSER NOBYPASSRLS`) created by a migration,
+granted CRUD on app tables + sequences (RLS does the per-row filtering — coarse grants + forced
+policies, the same model Supabase uses). **The API request path connects as `mosaic_app`
+(`APP_DATABASE_URL`); migrations + ingestion + eval keep the admin `mosaic` role (`DATABASE_URL`)** —
+admin is still needed for `CREATE EXTENSION vector` and bulk ingest. No silent fallback to the
+superuser URL (that would re-open the hole). Also: implementation uses `set_config('app.current_user_id',
+:uid, true)` rather than `SET LOCAL` (transaction-scoped AND parameter-safe — `SET LOCAL` can't bind).
+
+## 2026-06-19 — Design system: Linear/Vercel modern fintech, teal accent, dark-first
+
+**Decision:** A token-driven design system in `apps/web/app/globals.css` (extending
+the existing oklch shadcn tokens, not replacing them), so every screen inherits
+the look rather than being styled one-off. Locked direction: confident cool-neutral
+base (hue 248) with ONE teal accent, **dark-mode-first**, hairline borders over
+shadows, tabular numerals on all financial figures.
+
+**Key choices:**
+- **Accent = teal**, brand/interactive only: `--primary` dark `oklch(0.72 0.12 190)`,
+  light `oklch(0.58 0.13 195)`. Semantic colors stay distinct hues so trust signals
+  never read as accent: success/green `~152`, warning/amber `~75–85`, danger/red
+  `~25–27`.
+- **Layered surfaces** (page < panel < card): dark bg `0.165` / sidebar `0.185` /
+  card `0.205`; light bg `0.985` / sidebar `0.975` / card `1`. Hairline border dark
+  `oklch(1 0 0 / 9%)`, light `oklch(0.915 0.004 248)`. `--radius` `0.625rem`.
+- **Active-citation highlight = violet** (`--highlight` dark `oklch(0.5 0.13 295)`,
+  light `oklch(0.9 0.06 300)`), deliberately distinct from teal accent and the amber
+  numbers-guard banner, and legible in both modes (James's guardrail).
+- **Theme:** inline blocking script in the root layout sets `.dark` before first
+  paint (default DARK, does NOT follow OS preference, no flash), persisted to
+  `localStorage`; no `next-themes` dependency.
+- **App shell** via an `(app)` route group (sidebar + top bar, custom/lean, mobile
+  drawer) — URLs unchanged; old flat routes removed. Hero `/` stays full-bleed.
+- **Type:** fixed the self-referential `--font-sans` bug (Geist Sans now actually
+  applies); Geist Mono + `font-variant-numeric: tabular-nums` via a `.tnum` utility
+  on every figure; tight heading tracking.
+- **New deps: only `skeleton` + `tooltip`** (both free; no paid fonts/UI/animation
+  libs). Fonts stay self-hosted Geist via next/font.
+
+**Why:** Polish is ~as important as features for James's portfolio/demo goal. A
+system (tokens + a few reusable primitives) means next session's M4 auth/workspace
+screens are born consistent. Token values are a starting point to fine-tune from
+light+dark review; `globals.css` is the source of truth.
+
 ## 2026-06-19 — Runtime numbers guard: digit-core match, ≥4 digits, flag-and-warn
 
 **Decision:** Every significant figure an answer emits is checked in code against

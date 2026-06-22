@@ -1,6 +1,40 @@
-// Typed client for the Mosaic API. Server components call these.
+// Typed client for the Mosaic API. Shared types live here; public server
+// fetches (company/filing) below. Auth/user-scoped calls live in client-api.ts
+// (browser, credentials: include) and server-api.ts (server, cookie-forwarded).
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+/** The authenticated user, as returned by /auth/me, /auth/login, /auth/signup. */
+export interface AuthUser {
+  id: number;
+  email: string;
+}
+
+export interface WatchlistItem {
+  id: number;
+  company_cik: number;
+  ticker: string;
+  name: string;
+}
+
+export interface Watchlist {
+  id: number;
+  name: string;
+  created_at: string | null;
+  items: WatchlistItem[];
+}
+
+export type NoteTarget =
+  | { type: "company"; cik: number; ticker: string; name: string }
+  | { type: "filing"; filing_id: number; accession_no: string };
+
+export interface Note {
+  id: number;
+  body: string;
+  created_at: string | null;
+  updated_at: string | null;
+  target: NoteTarget;
+}
 
 export interface LineItemRow {
   line_item: string;

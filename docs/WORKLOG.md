@@ -23,6 +23,261 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-19 — Sally (Opus) — team transition + Vera end-of-Phase-1 review prepped
+**Prompted to:** Prep a fresh-Alexander chat transition + ready a neutral 3rd-party review for next session.
+**Did:** M4 complete (prior entry). Wrote a transition/kickoff prompt for a NEW Alexander chat (orient via
+ALEXANDER.md + CLAUDE.md + latest WORKLOG/ROADMAP/DECISIONS; NO active build — await direction after the
+review). Reusing **Vera** (not a new persona) for the end-of-Phase-1 review; tweaked VERA.md to
+de-prioritize the stale "startup" goal per DECISIONS 2026-06-18 (portfolio + personal use first). Wrote
+Vera's review kickoff prompt: audit the real repo (esp. M4 RLS/auth + the wedge), score dimensions +
+diff against the M3 STATUS.md, judge Phase-1-v1 readiness, and write the revised forward roadmap + update
+STATUS.md.
+**Verified:** Docs only.
+**Next / handoff:** James starts next session with the Vera review (kickoff handed). Standing: commit
+M4a–d + the polish pass from his terminal; run pytest + a live click-through; Bobby sets a real
+AUTH_SECRET_KEY. Phase-1 remainder = the "Make it presentable" block.
+**Roadmap:** No change (M4 closed in the prior entry).
+
+---
+
+### 2026-06-19 — Sally (Opus) — M4d Session 2b verified — ★ MILESTONE 4 COMPLETE
+**Prompted to:** Verify M4d-2b (notes UI) and close out Milestone 4.
+**Did (Alexander, M4d-2b):** Notes UI — `NotesPanel` (reusable per-target: company ticker / filing
+accession; anonymous → "Log in to add notes" with NO fetch; authed → create/list + per-note inline
+edit/delete), placed on the company page + filing reader; `NotesManager` (the /notes index grouping all
+notes by company/filing with links + edit/delete); /notes page self-guards (getMe→null→/login?next=/notes)
+then server-fetches. client-api +notes CRUD; server-api +getNotes; lib/api +Note/NoteTarget; Notes nav
+no longer "Soon". Removed the now-unused proxy.ts.
+**Verified (Sally, real files):** /notes self-guards before any fetch ✓; NotesPanel effect is gated on
+`authed` so anonymous users get the login prompt and NO 401 fetch ✓; proxy.ts + middleware.ts both gone
+✓; NotesPanel wired into company page + reader ✓. `next build` reported clean (11 routes). Backend
+untouched.
+**Next / handoff:** ★ M4 is DONE end-to-end — auth + watchlists + notes + DB-enforced Postgres RLS +
+cross-user security test + full UI, with public browse and a gated personal workspace. James, final
+checklist (your terminal, no AI usage): (1) `docker compose up` + `pytest` (the RLS security test needs
+Postgres) → expect green; (2) `npm run dev:web` and click through once logged-in AND logged-out — the
+UI has only been verified by `next build` + flow tracing, so it deserves real eyes before you call it
+demo-ready; (3) commit the whole M4 chain (M4a–M4d) + the earlier polish pass; (4) have Bobby set a real
+AUTH_SECRET_KEY in `.env`. After that, the only Phase-1 work left is "Make it presentable" (public repo,
+README screenshots/GIF).
+**Roadmap:** ★ Milestone 4 COMPLETE (backend + UI). M0 deferred-auth box closed (login/signup UI live).
+Remaining Phase 1: the "Make it presentable" block.
+
+---
+
+### 2026-06-19 — Sally (Opus) — M4d Session 2a verified (public-browse refactor + watchlist UI)
+**Prompted to:** Verify M4d-2a + docs.
+**Did (Alexander, M4d-2a):** Guard refactor for PUBLIC BROWSE — (app)/layout.tsx no longer redirects;
+calls getMe() and passes user|null to an auth-aware AppShell. /watchlist self-guards
+(getMe→null→redirect /login?next=/watchlist) then server-fetches getWatchlists (cookie-forwarded).
+Watchlist UI: WatchlistManager (create/delete list, remove item, re-fetch), company-header WatchButton
+(authed → popover of lists + "New list" with added-state; anonymous → /login?next=). client-api +5
+watchlist calls (credentials:include); server-api +getWatchlists; lib/api +Watchlist/WatchlistItem
+types; topbar auth-aware (chip+logout | "Log in"); nav Watchlist no longer "Soon".
+**Verified (Sally, real files):** Read (app)/layout.tsx (redirect REMOVED; user|null → shell = public
+browse ✓) and /watchlist/page.tsx (self-guards BEFORE any data fetch → clean redirect, no 401 page ✓).
+`next build` reported clean (11 routes). Backend untouched. Access model correct: browse public,
+personal page gated, data fetched only post-guard.
+**Next / handoff:** Session 2b (LAST M4 slice) = notes UI — prompt handed to James. notes GET already
+returns target labels (ticker/name/accession) so no backend change needed. Minor cleanup: proxy.ts is
+now unused (layout doesn't redirect; routes use fixed/client-side next) — drop it in 2b. James: commit
+M4d-2a from your terminal.
+**Roadmap:** M4 UI — auth foundation + watchlist UI done; notes UI = 2b, then M4 complete.
+
+---
+
+### 2026-06-19 — Sally (Opus) — M4d Session 1 verified (auth foundation UI)
+**Prompted to:** Verify Alexander's M4d-1 (frontend auth foundation) + docs.
+**Did (Alexander, M4d-1):** Client/server API split — `lib/client-api.ts` (browser,
+`credentials:include`: signup/login/logout/me), `lib/server-api.ts` (`getMe()` forwards the request
+cookie via next/headers), `lib/api.ts` (+`AuthUser` type only; public fetches untouched). Auth UI:
+`/login` + `/signup` (public, outside `(app)`), shared auth-form, `AuthProvider` (client context
+seeded server-side + logout). Server guard in `(app)/layout.tsx` (`getMe()` → 401 redirect
+`/login?next=`). `proxy.ts` stamps `x-pathname` for `?next` (Next 16 renamed middleware→proxy).
+Topbar real user chip + logout; hero "Log in" link.
+**Verified (Sally, real files):** Read server-api.ts (correct cookie-forward; null on 401/unreachable)
++ (app)/layout.tsx (server guard correct). Grep confirms server-api is imported ONLY by the server
+layout, so the omitted `server-only` directive (no-deps lock) is safe — no client bundle pulls
+next/headers. `next build` reported clean (not re-run here). Backend untouched.
+**Next / handoff:** TWO Session-2 decisions pending James (asked): (1) public-browse vs gated —
+company/filing/dashboard currently sit inside the guarded `(app)` group so they require login; recommend
+making browse/read/ask PUBLIC (recruiter sees the wedge without signup) + guard only the personal layer;
+(2) the #4 Watch-UX pick. Session 2 = watchlist + notes UI (+ guard-scope refactor if public). James:
+commit M4d-1 from your terminal.
+**Roadmap:** M4 UI in progress — auth foundation done; workspace UI + guard scope = Session 2.
+
+---
+
+### 2026-06-19 — Sally (Opus) — M4c verified (notes + RLS)
+**Prompted to:** Verify M4c (notes) before the final UI slice.
+**Did (Alexander, M4c):** `notes` table (migration 0009, chain 0008→0009): user_id FK→users CASCADE,
+body, created_at/updated_at (onupdate-bumped), two nullable targets `company_cik`→companies.cik and
+`filing_id`→filings.id with a CHECK that exactly one is set; RLS ENABLED + FORCED + fail-closed
+`notes_owner` policy (mosaic_app CRUD via 0008's default privileges — no GRANT). `routers/notes.py`:
+POST (exactly-one target; ticker/accession resolved), GET (`?company=`/`?accession=` filters), PATCH
+(bumps updated_at), DELETE — all via get_rls_session, flush-not-commit, not-yours→404. Wired in main.py.
+**Verified (Sally, real files):** Read migration 0009 — notes has its OWN ENABLE+FORCE RLS + fail-closed
+policy (the per-table trap handled), CHECK exactly-one-target correct, sequential 0008→0009. test_rls.py
+genuinely extended: notes DB-level (invisible/un-writable to B; empty GUC→0 rows) + API-level (B's GET
+excludes, PATCH/DELETE→404; A owns CRUD; 422 on neither/both targets). Reported 47 passing w/
+APP_DATABASE_URL; 42 + 5 skipped offline. NOT re-run here (no sandbox Postgres) — confirm green in your
+terminal.
+**Next / handoff:** James: run pytest + commit M4c (with M4a/M4b) from your terminal. Only M4d left —
+the frontend: login/signup, auth state, protected routes, wiring watchlist + notes into the existing
+shell stubs (design system already in place). Sally to write the M4d prompt next.
+**Roadmap:** M4 — notes done; watchlists/RLS/security-test already done. M4 BACKEND COMPLETE; M4d (UI)
+is the last slice.
+
+---
+
+### 2026-06-19 — Sally (Opus) — M4b verified (RLS + watchlists, incl. superuser-bypass fix)
+**Prompted to:** Confirm M4b is genuinely done before starting M4c (which reuses the RLS pattern).
+**Did (Alexander, M4b + fix):** `watchlists` + `watchlist_items` (migration 0007) with RLS
+ENABLED + FORCED + policies on `current_setting('app.current_user_id')`; `get_rls_session` dep
+(`set_config(...,is_local=>true)`, sole committer); 5 watchlist endpoints; cross-user security test.
+Superuser-bypass fix (migration 0008): dedicated `mosaic_app` role (NOSUPERUSER NOBYPASSRLS) + coarse
+CRUD grants + ALTER DEFAULT PRIVILEGES (auto-covers M4c `notes`); db.py engine split (admin
+DATABASE_URL for alembic/ingestion/eval; APP_DATABASE_URL/`mosaic_app` for EVERY API request, no
+fallback); rls.py + `get_session` on the app engine. config + .env.example wired (APP_DATABASE_URL).
+**Verified (Sally, real files):** Read migration 0008 (role NOSUPERUSER NOBYPASSRLS ✓; grants +
+default privileges ✓), db.py (app engine, no silent admin fallback ✓), rls.py (AppSessionLocal +
+set_config is_local + sole-committer ✓), test_rls.py — it connects AS `mosaic_app` via `app_engine()`
+and proves DB isolation, fail-closed empty GUC, no pooling leak, API cross-user 404s, and the
+multi-statement commit-contract. Because it exercises the non-superuser role, it genuinely proves
+isolation. NOT re-run here (sandbox has no reachable Postgres+role) — **James to confirm green via
+`docker compose up` + pytest before committing.**
+**Next / handoff:** James: run pytest + commit M4a & M4b from your own terminal (sandbox git lag).
+M4c (notes) reuses this exact RLS pattern and the default privileges already cover its table. M4d = UI.
+**Roadmap:** M4 — watchlists + RLS + cross-user security test done (backend); notes = M4c; UI = M4d.
+
+---
+
+### 2026-06-19 — Sally (Opus) — M4a verified + logged
+**Prompted to:** Verify Alexander's M4a auth-backend build + handle the docs close-out (role split:
+Sally owns docs/checks).
+**Did (Alexander, M4a):** Auth backend — `users` table (migration 0006, chain 0005→0006);
+`app/auth.py` (argon2 hash/verify; HS256 JWT with `sub` + 7-day `exp`; `mosaic_session` httpOnly /
+SameSite=Lax cookie, `Secure` gated by `AUTH_COOKIE_SECURE`; `get_current_user` = the RLS seam);
+`app/routers/auth.py` (signup/login/logout/me). Wired `auth.router` in main.py; config +=
+`auth_secret_key`/`auth_cookie_secure`; requirements += `argon2-cffi==23.1.0`, `PyJWT==2.10.1`;
+`.env.example` += `AUTH_SECRET_KEY`/`AUTH_COOKIE_SECURE`. 9 offline auth tests. All 4 review
+refinements folded in (JWT exp+verify; identical-401 no-enumeration; logout clears matching attrs;
+min-8 password).
+**Verified (Sally, on real files):** Read `auth.py` + `routers/auth.py` — security logic correct
+(expiry verified by `jwt.decode`; no-enumeration login; cookie attrs match on clear). Migration 0006
+`down_revision=0005`. `requirements.txt` + `.env.example` confirmed via Read (bash showed them empty
+= mount-lag on the phantom-deleted files; Read is authoritative). Did NOT re-run pytest (sandbox
+can't); Alexander reported 42 passing (33+9), consistent with imports + static review. No frontend
+touched.
+**Next / handoff:** James commits M4a from his OWN terminal first (sandbox git lag = phantom
+deletions; do NOT `git add -A`). Suggested: `feat: m4a — auth backend (users + argon2 + JWT cookie
+sessions, get_current_user)`. Set a real `AUTH_SECRET_KEY` in `.env` (Bobby — example default is
+`dev-insecure-change-me`). Then M4b — RLS mechanism + watchlists: `SET LOCAL app.current_user_id`
+inside the request txn (compose `get_current_user` + `get_session`), RLS policies, and the cross-user
+security test. Sally to write the M4b prompt next.
+**Roadmap:** M0 deferred-auth item annotated (backend done M4a; UI in M4d). No M4 milestone boxes yet
+(watchlists/notes/RLS = M4b/c).
+
+---
+
+### 2026-06-19 — Sally (Opus) — role-split note
+**Prompted to:** Record a working agreement to save Alexander's usage.
+**Did:** Updated `SALLY.md §1` — Alexander remains lead on all main development (most capable model
+/ lead engineer; don't overstep). Sally now absorbs the cheap ancillary work that burns his tokens:
+doc updates, WORKLOG/ROADMAP/DECISIONS close-outs, light verification/spot-checks, tidying. Rule of
+thumb: code/architecture = Alexander; docs/checks = Sally.
+**Verified:** Doc change only.
+**Next / handoff:** Bobby/Alexander — heads up, Sally will handle close-out paperwork & light checks
+going forward so your sessions stay focused on code/IT.
+**Roadmap:** No change.
+
+---
+
+### 2026-06-19 — Sally (Opus) — M4 Session-1 close-out finished
+**Prompted to:** Finish Alexander's polish-pass close-out (he was cut on usage mid-step-2). James
+is happy with the look — no design changes.
+**Did:** Alexander completed Step 1 — the design-system DECISIONS entry. I finished the remaining
+close-out myself (file edits only, to spare Claude-Code usage): this WORKLOG entry + a ROADMAP note
+ticking the design-system + polish pass under "End of Phase 1 — Make it presentable." No code changed.
+**Verified:** DECISIONS token values match `globals.css` exactly (teal primary `0.72 0.12 190` dark /
+`0.58 0.13 195` light; violet highlight `0.5 0.13 295` dark; layered surfaces 0.165/0.185/0.205;
+hairline borders). Trust spine already confirmed static-identical (prior entry). Runtime smoke test
+only PARTIAL: Alexander confirmed the styled 404 path works (accidentally routed a query into the
+topbar ticker-search → landed on the new not-found page) but did NOT finish the footnote-highlight /
+grouped-citation / amber-banner / abstention click-through before being cut. Regression risk low —
+reader logic is byte-identical to the working M3 reader.
+**Next / handoff:** Two items need James's OWN terminal (zero AI usage): re-run `next build` and
+`pytest` to reconfirm green, and a ~30-sec click-test of one cited answer in the reader (footnote →
+exact highlight + scroll; amber banner on an unsupported figure). Then James commits from his terminal
+— sandbox git shows phantom deletions (lag); do NOT `git add -A` there. Suggested message:
+`feat: design-system + visual polish pass (teal/dark, app shell, states)`. After commit the polish
+phase is DONE. Session 2 = M4 features (auth/RLS/watchlists/notes) — STILL needs James's auth/RLS
+stack decision before I write that prompt.
+**Roadmap:** Design-system + polish pass marked done under "Make it presentable." No M4 boxes ticked.
+
+---
+
+### 2026-06-19 — Sally (Opus) — verification of Alexander's M4 Session-1 polish build
+**Prompted to:** Verify Alexander's M4 Session-1 polish build (he used ~90% of James's usage and
+was cut short at the screenshot step, before logging close-out).
+**Did (Alexander, this session):** Built the design-system + polish pass A–F. globals.css token
+rewrite (teal primary hue ~190/195, cool-neutral base hue 248, added success/warning + a violet
+highlight token, both modes), **fixed the self-referential `--font-sans` bug**, added `.tnum`
+tabular helper + heading tracking. Inline blocking theme script in root layout (default dark,
+persists, no OS-follow, no flash). Custom app shell (sidebar/topbar/theme-toggle/ticker-search/
+mobile) via an `(app)` route group — **URLs unchanged**, old routes removed. Reusable primitives
+(page/section headers, MetricCard, Delta, Chip, CitationChip, Empty/Error states); added only
+`skeleton` + `tooltip` (free). Restyled hero `/`, dashboard/companies grid, company page (metric
+cards + deltas + tabular tables), filing reader, settings (health check moved here); added
+loading/error/404 states. Found + fixed a real runtime bug: `<Button render={<Link/>}>` needed
+base-ui `nativeButton={false}` (was hanging the renderer) — applied in all 3 spots.
+**Verified (Sally, on the real files):** **Trust spine INTACT** — `reader.tsx` `bodyStart`/
+`renderBody` offset math byte-identical to pre-change, grouped-citation split `/(\[[\d,\s]+\])/g`
+unchanged, `scrollIntoView` effect unchanged, numbers-guard banner preserved (now on `--warning`),
+abstention preserved (cleaner). Violet highlight (hue ~295/300) distinct from teal/amber/green/red
+per guardrail. Font bug fixed; theme script + dark default correct; route group on disk; Button fix
+in all 3 places. Citation external-link → `primary_doc_url` is REAL end-to-end (models.py:61 /
+filing.py:46). Alexander did NOT commit (log ends at a0458fc) — correct. **NOT independently
+re-run:** `next build` / `pytest` (sandbox would give false results — Windows node_modules + lagging
+git); relied on his clean-build claim + static review. **NOT done: screenshots** — preview_screenshot
+broke and no Chrome ext, so the VISUAL sign-off (James's top priority) is the one open item.
+**Next / handoff:** (1) Eyes-on: run `npm run dev:web` and review every screen in dark + light (or
+I can capture via Chrome/computer-use once the 3 services are up). (2) After sign-off, James commits
+from his OWN terminal — sandbox git shows phantom deletions = lag; do NOT `git add -A` from it.
+(3) Write the design-system DECISIONS entry once token values are visually confirmed (deferred in
+case James tweaks). (4) Then Session 2 = M4 features — still needs James's auth/RLS decision.
+**Roadmap:** No code milestone ticked. Polish pass maps to "End of Phase 1 — Make it presentable"
+(screenshots/GIF still pending). No M4 boxes.
+
+---
+
+### 2026-06-19 — Sally (Opus)
+**Prompted to:** Kick off Milestone 4 strongly; James wants the site to look phenomenal /
+interview-grade (polish ~ as important as features for demoing his work).
+**Did:** Set the sequencing with James — **POLISH FIRST** (Session 1 = design system + visual
+polish, zero features), then **M4 features** (Session 2). Locked the visual direction:
+Linear/Vercel-grade modern fintech, **TEAL** accent, **dark-mode-first** (both modes proper),
+tabular numerals on all financials, app shell with sidebar; mocked it for James — approved.
+Wrote Alexander's Session 1 prompt (design-system + polish pass) in house style:
+ORIENT→PLAN-ONLY-THEN-STOP, locked choices vs surfaced decisions (token values / landing /
+theme persistence), named the hard part — a token-driven SYSTEM (not a paint job) **and a
+do-not-regress contract on reader.tsx's trust-spine UI** (citation deep-link + exact char-offset
+highlight + numbers-guard amber banner + abstention). DoD includes both-mode screenshots,
+`pytest` still green (backend untouched), no new paid deps; don't auto-commit.
+**Verified:** Read the real frontend before prompting — Tailwind v4 + shadcn oklch tokens
+(both modes, sidebar tokens predefined), Geist/Geist Mono via next/font ($0), lucide-react
+already in deps → it's a re-theme + shell pass, not a rebuild. Confirmed M0–M3 committed clean
+via `git log` (f5126ef + a0458fc); the sandbox's phantom staged-deletions are the known
+mount-lag, not real — did not alarm James.
+**Next / handoff:** James approves/tweaks Alexander's Session 1 plan when posted (I review with
+him). **Session 2 = M4 features still NEEDS James's auth/RLS stack decision** before I write that
+prompt — options on the table: local-first real Postgres RLS (my lean: $0, clone-runnable,
+DB-enforced) vs Supabase vs Clerk. Do NOT tick M4 boxes for the polish pass.
+**Roadmap:** No code yet. Polish pass maps to "End of Phase 1 — Make it presentable"; M4 boxes
+untouched.
+
+---
+
 ### 2026-06-19 — Sally (Opus) — RETIRING / HANDOFF
 **Prompted to:** Hand the lead role to a new Sally and ensure a clean, high-bar onboarding.
 **Did:** Milestones 0–3 are complete, committed, and pushed (the wedge works: grounded, cited,

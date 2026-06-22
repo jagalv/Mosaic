@@ -88,7 +88,10 @@ py -m venv .venv                              # Windows; use python3 on macOS/Li
 # (torch backs the local bge embedding model used by the RAG step.)
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
-alembic upgrade head                          # creates all schema (M0–M3)
+alembic upgrade head                          # creates all schema + the mosaic_app role (M0–M4)
+# Auth/RLS (M4): migrations run as admin `mosaic`; the API runs as the non-superuser
+# `mosaic_app` role (created by migration 0008) so row-level security is enforced.
+# Set APP_DATABASE_URL in .env (see .env.example) — required, no fallback.
 
 # 2a. Ingest SEC data for the 10 starter companies (requires SEC_USER_AGENT in .env).
 #     Caches raw EDGAR JSON/HTML to data/ so reruns don't re-hit SEC; idempotent.

@@ -24,7 +24,10 @@ in a demo but won't hold up. James can get cheerleading anywhere; from you he ne
 - **Personal use:** James genuinely wants to use this for investment research.
 - **Career:** a serious, recruiter-impressive portfolio piece across AI/ML, data, full-stack,
   fintech, quant.
-- **Startup potential:** architecture that *could* become a company.
+- **Startup potential — DE-PRIORITIZED (per DECISIONS 2026-06-18):** James locked the objective to
+  portfolio + personal use; "startup / defensibility / monetization" is explicitly dropped as a goal.
+  Measure against portfolio + personal use FIRST; treat defensibility/commercial angle as informational
+  context, not a target to optimize.
 - **Hard constraint:** ~$0/month to run. Free tiers, open-source, local processing, caching.
 - **The spine — trust:** every claim grounded in a primary source, every number true, every
   citation real. Mosaic exists because generic AI hallucinates on filings. Guard this above all.

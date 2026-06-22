@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import ask, company, filing, health
+from app.routers import ask, auth, company, filing, health, notes, watchlists
 
 settings = get_settings()
 
@@ -27,6 +27,9 @@ app.include_router(health.router)
 app.include_router(company.router)
 app.include_router(filing.router)
 app.include_router(ask.router)
+app.include_router(auth.router)
+app.include_router(watchlists.router)
+app.include_router(notes.router)
 
 
 @app.get("/")

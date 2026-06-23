@@ -6,184 +6,208 @@ How to use this file: work top to bottom. Each **milestone** ends in something y
 
 ---
 
-## Vera's reset — 2026-06-19 (read this first)
+## Vera's Phase-2 reset — 2026-06-22 (read this first)
 
-I reviewed the real repo at the M3 checkpoint. The build is strong and the wedge works. This
-section recalibrates the plan to reality; the milestone list below is unchanged in *shape*, but
-the estimates were fantasy-optimistic in the original (M3 was budgeted at 1.5–2 weeks and landed in
-~2 days of AI-assisted work). Full assessment in `docs/STATUS.md`.
+Phase 1 (M0–M4 + the design-system pass) is **substantively done and genuinely strong** — the
+wedge works, the trust spine has a real numbers guard, and M4 shipped DB-enforced RLS with a true
+security test. Full assessment in `docs/STATUS.md` (2026-06-22). The old milestone list is now
+exhausted, so this is its replacement: a forward plan optimized for the **locked goals — personal
+research tool + recruiter-impressive portfolio, at ~$0**. Startup/defensibility is de-prioritized
+per DECISIONS 2026-06-18, so anything that only served *monetization or a sharing product* is cut.
 
-**What I changed and why:**
-- Added a **Definition of Complete** (below) — the original roadmap never said what "done" means,
-  so "done" had drifted to "passes on the dev machine." That's the gap that nearly shipped M3 with
-  a repo no one else can run.
-- Re-tagged effort estimates to **AI-assisted-solo reality** (focused-session sizes, not
-  calendar weeks), while keeping honest buffers for the two things that actually eat time: messy
-  data plumbing and the Gemini free-tier throttle.
-- Added a **"Close-out M3" block** — M3 is ~95%, not done. The remaining 5% is reproducibility +
-  two abstention checks + a clean commit, and it gates everything else.
+**How I re-scored the old Phase 2–4 grab-bag (each item kept / reordered / cut, with a reason):**
 
-**Definition of Complete (applies to every milestone from now on):**
-A milestone is *done* only when **all** of these are true — not just "it works for me":
-1. A **clean clone** (`git clone` → documented setup steps → run) starts and demos the feature.
-   That means deps are pinned in `requirements.txt`/`package.json` and every new env var is in
-   `.env.example`. ("Works in my venv" is not done.)
-2. The feature's **trust claim is tested**, not just asserted (golden fixtures for numbers, golden
-   Q&A for answers, a security test for access control).
-3. **`main` is committed clean** — no pile of uncommitted changes, WORKLOG appended, ROADMAP boxes
-   ticked, DECISIONS entry if a real choice was made.
+| Old item | Verdict | Why |
+|---|---|---|
+| Expand company universe (S&P 100) | **KEEP → M6** | Directly serves personal-use; cheap (pipeline exists); enables diffs/screener. |
+| Research workspace: memos/tags/thesis | **KEEP → M8** | The capstone "OS" feature and a standout portfolio artifact. Reframed as the cited-memo milestone. |
+| Cross-filing diffs ("what changed") | **KEEP → M7, flagship** | Most differentiated + personally useful AI feature; it's the README's own headline example. |
+| Side-by-side multi-company comparison | **DEFER → Phase 3** | Useful but lower differentiation than diffs/memo; cheap once corpus is wide. |
+| Fundamentals screener | **DEFER → Phase 3** | Personally useful; depends on a wide corpus (M6); modest portfolio lift. |
+| Earnings-transcript ingestion | **WEIGH → Phase 3** | Real value + README promise, but $0-clean sourcing is a risk — validate a free source first. |
+| FRED macro dashboard | **OPTIONAL → Phase 3** | Easy + free, nice breadth, but off the core filing-research thesis. Small side-quest. |
+| Investment-memo generation | **KEEP → M8** | See workspace above. |
+| Portfolio/CSV import | **CUT (for now)** | Low portfolio differentiation; only marginal personal-use vs. notes/watchlists. |
+| Retrieval re-ranking (cross-encoder) | **DEFER (conditional)** | Don't build speculatively — recall is already 1.00 on the (small) set. Revisit only if M6's wider eval shows a precision problem. |
+| Perf/cost hardening | **FOLD into M5** | Not a standalone milestone; handle at deploy + as-needed. |
+| Sharing / public cited memos | **CUT** | A product/startup feature; off-goal. |
+| Learning layer (explainers/templates) | **CUT** | Product polish, low leverage for the locked goals. |
+| Alerts via scheduled job | **CUT (for now)** | Operationally heavy at $0 (needs always-on scheduler); low portfolio lift. |
+| Optional paid-tier gating | **CUT** | Monetization; explicitly off-goal. |
 
-**What "shippable" means for Mosaic, concretely:**
-- **Demo-ready (≈0.5–1 focused session, basically here):** clean clone boots; a real cited answer
-  on ≥2 companies verified live; M3 closed and committed clean. This is the portfolio screenshot.
-- **v1 / portfolio-shippable (≈1–1.5 weeks):** the above + M4 (watchlists, notes, row-level
-  security + the cross-user security test) so it's a *persistent personal tool*, not a stateless
-  lookup + the "Make it presentable" block (public repo, README screenshots/GIF) + an expanded,
-  honest eval (≥30 Qs / ≥5 companies, incl. numeric) and a runtime numbers guard + auth (deferred
-  since M0, due before M4).
-- **Personal-use real:** overlaps v1 — usable for your own research once notes/watchlists persist
-  and the corpus is a bit wider.
+**Definition of Complete (every milestone, carried forward from the M3 reset):**
+A milestone is *done* only when all are true: (1) a **clean clone** runs and demos it (deps pinned,
+env vars in `.env.example`); (2) its **trust/security claim is tested**, not just asserted; (3)
+**`main` is committed clean** with WORKLOG appended, ROADMAP ticked, DECISIONS entry if a real
+choice was made. **New for Phase 2:** for a portfolio milestone, "done" also means it's **pushed
+and visible** (the live demo reflects it).
 
-**Honest completion estimate for Phase 1 v1:** ~**2–3 focused weeks** of calendar time at the
-current cadence. The bulk of that is **M4's auth + RLS + security test** — the unglamorous,
-must-be-correct plumbing this very roadmap warns is where projects stall (see "Where the time
-really goes"). The AI features are the fast part; they're largely behind you.
+**Effort estimates** are AI-assisted-solo "focused sessions" (a session ≈ a few hours of real
+work), calibrated to actual cadence — M3 and M4 each landed in ~1–2 focused days. Honest buffers
+included for data-plumbing and free-tier friction.
 
-### Close-out M3 (do before anything else — ≈1 focused session)
-- [x] ~~Pin the M3 runtime deps~~ — **already pinned** (Vera read stale copies): `requirements.txt`
-      has pgvector/sentence-transformers/google-genai; torch is a documented CPU-index pre-step.
-      Verified on a clean venv (torch stayed `+cpu`, API imports, pytest 33/33).
-- [x] ~~Add M3 env vars to `.env.example`~~ — **already present** (`GEMINI_API_KEY`, `LLM_MODEL`,
-      `EMBEDDING_MODEL`). Confirmed by direct read.
-- [x] **Clean clone boots** — fresh venv → CPU torch → `pip install -r requirements.txt` → API
-      imports + full pipeline answers end-to-end (mock); pytest 33/33 on the clean venv. README
-      install section smoothed (torch-first, chunk/embed steps, key/mock note).
-- [x] **Runtime numbers guard** — `app/rag/guard.py`: any answer figure not found in retrieved
-      text is flagged (flag-and-warn, shown in the reader). 8 tests; migration `0005` persists it.
-- [x] **2 abstention checks** (`appstore-dau`, `msft-cfo-salary`) — both abstain. Faithfulness = 13/13.
-- [x] **Live cited-answer check** — a real net-sales answer's footnotes resolve to the
-      segment/income-statement source spans containing the figures; numbers guard passed (no
-      false-fire on the correct figures).
-- [ ] **Commit a clean tree** — first confirm `git status` in your own terminal is sane (sandbox
-      shows phantom staged deletions = lag; verify before committing). *(only open M3 item)*
+**Sequencing at a glance:** **M5 (ship) → M6 (corpus + eval) → M7 (cross-filing diffs) → M8 (cited
+memo)**, then optional Phase-3 breadth. The two highest-leverage milestones are **M5** (converts
+the build into a visible portfolio piece — do it first) and **M7** (the flagship feature that best
+showcases the whole stack, gated on M6).
 
 ---
 
-## Phase 1 — Foundation & the Wedge
+## ✅ Phase 1 — Foundation & the Wedge (M0–M4) — COMPLETE
 
-The goal of Phase 1 is a genuinely valuable, demoable product: research a few hundred companies end-to-end and get cited answers from their filings. Reach the hard, differentiating feature (Milestone 3) as early as is sane.
+Delivered: M0 skeleton · M1 SEC financials · M2 filings + 10-K segmentation · M3 the wedge
+("Ask this filing": grounded, cited, **numbers-guarded** Q&A — recall@8 = 1.00, faithfulness =
+13/13) · a design-system polish pass (Linear/Vercel-grade, teal/dark, app shell, states) · M4 auth
+(argon2 + JWT httpOnly cookies) + watchlists + notes + **DB-enforced Postgres RLS** (non-superuser
+`mosaic_app` role) + a cross-user security test (DB + API). `pytest` green (confirm count in your
+terminal — claimed 47, RLS suite needs local Postgres). Full per-milestone detail is preserved in
+git history and DECISIONS; the old checkbox list lived here through 2026-06-19 and is now closed.
 
-### Milestone 0 — Skeleton that runs (a few days)
-Get the boring infra green *before* writing features. It's demoralizing to fight deploys later with real code at stake.
-
-- [x] Initialize git repo (committed locally — push to GitHub still pending)
-- [x] Set up monorepo structure (`apps/web`, `services/`, `packages/`, `docs/`)
-- [x] `.gitignore` (node_modules, `.env`, `__pycache__`, `data/`) and `.env.example`
-- [x] Postgres running locally (Docker + pgvector), connection verified `DB: ok`
-- [x] Local loop works: browser → FastAPI → Postgres → browser (health check green)
-- [ ] **DEFERRED →** Next.js app deployed to Vercel (intentionally out of scope for the local-pipeline session)
-- [x] Auth wired up — sign up / log in *(done 2026-06-19: backend in M4a — `users` + argon2 + JWT
-      httpOnly-cookie sessions + `get_current_user`; login/signup UI + server guard in M4d)*
-- [x] Push repo to GitHub (`jagalv/mosaic` — make public once presentable)
-
-**Status:** Local skeleton ✅ green and committed. Vercel deploy + auth consciously deferred — not blockers for Milestone 1.
-
-**Demo:** local health check shows **API: ok / Database: ok** end-to-end.
-
-### Milestone 1 — One company, real data (≈1 week)
-- [x] Pick ~10 companies (e.g. AAPL, MSFT, NVDA…) to start
-- [x] SEC ingestion for just these: pull submissions + companyfacts (XBRL) → store in Postgres
-- [x] Define core schema: `companies`, `financials`, `filings`
-- [x] Set descriptive `User-Agent` for EDGAR; respect ~10 req/s
-- [x] Company page renders: name, sector, multi-year financial-statements table
-- [x] Golden fixture test: assert known financial values for a known filing
-
-**Demo:** real SEC financial data rendering on a real company page. No AI yet.
-
-### Milestone 2 — Filings on the page (≈1 week)
-- [x] Fetch + store recent 10-K / 10-Q filings for the starter companies (raw text → Postgres; R2 deferred — see DECISIONS)
-- [x] `filing_sections` table; segment filings by structure (Item 1A Risk Factors, Item 7 MD&A, etc.) — 10-K; 10-Q text stored, sectioning deferred
-- [x] Filing list on the company page
-- [x] Filing reader view with navigable sections
-
-**Demo:** you can read a filing inside your app, jump to Risk Factors / MD&A.
-
-### Milestone 3 — The wedge: "Ask this filing" ← ✅ DONE (2026-06-19)
-This milestone proves the entire thesis. Spend real care here.
-
-- [x] Section-aware chunking with metadata (`cik, accession_no, form_type, section, fiscal_period, char_range`)
-- [x] Embed chunks (local `bge-small`/`e5-small`) → store in pgvector; never re-embed unchanged chunks (content hash)
-- [x] Hybrid retrieval: pgvector semantic + Postgres full-text, fused (RRF), pre-filtered by company/form/section — *OR keyword + company-name strip; **recall@8 = 1.00**.*
-- [x] Grounded answer endpoint: answer ONLY from retrieved context; cite chunk IDs; return "not stated in the filings" when unsupported — *verified: 10/10 answerable grounded+cited; abstains.*
-- [x] AI panel UI: footnotes that deep-link to the source paragraph — *built, `next build` clean (grouped-citation deep-links handled).*
-- [x] Build a golden Q&A set (10–20 questions with known answers + source spans) — *13 Qs (10 answerable, multi-span; 3 unanswerable), self-validating.*
-- [x] Check faithfulness (every claim supported?) and retrieval recall@k before trusting it — *recall@8 = 1.00; **faithfulness = 13/13 = 1.00** (gemini-2.5-flash-lite): 10/10 answerable grounded with real citations, 3/3 unanswerable abstain.*
-- [x] `ai_interactions` log: prompt, retrieved chunk IDs, latency, tokens, feedback
-- [x] `answer_cache` for repeated questions per filing (key includes provider+model)
-- [x] **Runtime numbers guard** (trust spine): flag any answer figure not found in the retrieved text (flag-and-warn; shown in the reader) — `app/rag/guard.py`, migration `0005`.
-
-**Status: ✅ DONE.** `main` green (`pytest` 33/33 on dev **and** a clean venv; `next build` clean; clean-clone boot + full migration chain verified on an empty DB). **recall@8 = 1.00**; **faithfulness = 13/13 = 1.00** (gemini-2.5-flash-lite): 10/10 answerable grounded with real citations, 3/3 unanswerable abstain. Trust spine has a runtime numbers guard (verified live: correct figures pass, no false-fire). Live check: a real net-sales answer's footnotes deep-link to the segment/income-statement spans that contain the cited figures. Only open item is James's clean commit (sandbox git lag — verify `git status` in a real terminal first).
-
-**Demo:** ask a real question about a real filing, get a cited answer that links to the source. This is the "oh, that's actually useful" moment.
-
-### Milestone 4 — It's an OS, not a lookup (≈1 week)
-- [x] `watchlists` + `watchlist_items`, tied to the logged-in user — *backend (M4b) + UI (M4d): /watchlist manager + company "Watch" popover*
-- [x] Persistent `notes` (per company / per filing) — *backend (M4c): per-target company/filing
-      (CHECK exactly-one), RLS forced + fail-closed owner policy; UI (M4d): inline NotesPanel on
-      company + filing pages, plus the /notes index*
-- [x] Row-level security so a user only ever sees their own data — *real Postgres RLS, FORCED, via
-      non-superuser `mosaic_app` role + `set_config` GUC (M4b; superuser-bypass fixed in migration 0008)*
-- [x] Security test: one user cannot read another user's rows — *`tests/test_rls.py`: DB + API
-      isolation, fail-closed, no pooling leak, commit-contract — now covers watchlists AND notes*
-
-**Demo:** come back the next day and your research, watchlist, and notes are all still there.
-
-### End of Phase 1 — Make it presentable
-- [x] **Design-system + visual polish pass** (2026-06-19) — Linear/Vercel-grade modern fintech,
-      teal accent, dark-first; app shell, restyled hero/dashboard/company/reader, loading/error/404
-      states. See DECISIONS 2026-06-19 "Design system". (Trust spine preserved + verified.)
-- [ ] Make the repo public
-- [ ] Polish README; add screenshots / a short GIF
-- [ ] Fill in the "Running locally" section with real steps
-- [ ] Write up 2–3 `DECISIONS.md` entries explaining key choices
+**The one Phase-1 loose end → folded into M5:** the "Make it presentable" block (public repo,
+README screenshots/GIF) was never finished. It's the first thing M5 closes.
 
 ---
 
-## Phase 2 — Becomes an OS (paced over weeks)
-- [ ] Expand the company universe (start with S&P 100, grow from there)
-- [ ] Research Workspace: memos, tags, "thesis" objects linking companies + filings + your writing
-- [ ] Cross-filing diffs: "what risk factors changed since last year"
-- [ ] Side-by-side multi-company comparison
-- [ ] Basic fundamentals screener over the cached universe
-- [ ] Alerts (new filing / large price move) via a scheduled job — keep it simple (idempotent cron diff checks)
+## Phase 2 — Deepen the wedge into its best self
 
-## Phase 3 — AI Leverage & Market Context
-- [ ] Investment memo generation (structured, fully cited, human-edited) → into the Research Workspace
-- [ ] Earnings-transcript ingestion + analysis
-- [ ] FRED macro dashboard (rates, yield curve, CPI, employment, spreads) + AI macro digests
-- [ ] Portfolio tracking via CSV import (performance, allocation, exposure)
+The theme: stop adding surface area; make the thing that already works **visible, trustworthy at
+scale, and genuinely useful for real research.**
 
-## Phase 4 — Polish, Scale & Product
-- [ ] Sharing / public cited memos ("GitHub for analysis")
-- [ ] Learning layer (inline explainers, guided research templates)
-- [ ] Retrieval re-ranking (cheap cross-encoder) where precision needs it
-- [ ] Performance + cost hardening
-- [ ] Optional paid-tier gating
+### Milestone 5 — Ship & Showcase  ★ HIGHEST LEVERAGE — do this first (≈1–2 sessions)
+Turn the finished build into a portfolio piece people can see and click. This is mostly packaging
+and ops, not new engineering, and it unlocks the career goal immediately.
+
+- [ ] `git push` M4 to GitHub; confirm `main` is clean and current (verify `git status` in a real
+      terminal — the sandbox git view lags).
+- [ ] Set a real `AUTH_SECRET_KEY` (and rotate the `mosaic_app` password) for anything non-local.
+- [ ] **Make the repo public.**
+- [ ] README: a short "what this is" + **screenshots + a ~30-second GIF** of a cited, deep-linked
+      answer (the money shot) and the workspace.
+- [ ] Write up 2–3 `DECISIONS`-style highlights in the README (the RLS superuser-bypass catch, the
+      numbers guard, RRF retrieval) — they signal senior judgment to a technical reader.
+- [ ] **Live $0 demo:** deploy web (Vercel free) + API + Postgres (Neon/Supabase free tier), seeded
+      with the current corpus. Set `AUTH_COOKIE_SECURE=true` behind HTTPS; lock CORS to the real
+      origin.
+
+**The genuinely hard part:** first real deploy always has friction — cross-origin cookies over
+HTTPS (Secure flag, SameSite, CORS allow-credentials with a specific origin), cold hosted Postgres
++ the migration chain + the `mosaic_app` role on a managed DB, and the Gemini free-tier quota on a
+*public* endpoint (consider a per-IP rate limit or a "demo mode" cap so one visitor can't exhaust
+the day's quota).
+**Definition of complete:** a stranger can open a URL, browse a real company, ask a filing a
+question, and see a cited answer deep-link to the source — without you in the room — and the public
+repo's README shows it at a glance.
+**Demo:** the link itself.
+
+### Milestone 6 — Corpus + Evidence (≈2–3 sessions) — depends on: M5 deploy target exists
+Widen the two things that are currently thin: how many companies you can research, and how
+trustworthy the headline numbers are.
+
+- [ ] Expand the company universe (S&P 100 first, then grow) via the existing ingestion pipeline;
+      handle the XBRL/segmentation edge cases that show up beyond the 10 starters.
+- [ ] Ingest **≥2 years of 10-Ks per company** (prerequisite for diffs in M7).
+- [ ] Expand the golden Q&A set to **≥30 questions across ≥5–8 companies**, including **numeric**
+      questions (exercise the guard) and at least a few that *should* abstain.
+- [ ] Re-run recall@k + faithfulness on the wider set; record the honest numbers (they may dip
+      below 1.00 — that's fine and more credible than a suspicious perfect score on 13 Qs).
+- [ ] Add lightweight retrieval/answer **observability** you'd actually look at (the `ai_interactions`
+      log exists — surface a tiny internal view or a summary query: abstention rate, guard-flag
+      rate, latency).
+
+**The genuinely hard part:** authoring verified answer-spans at scale is real grind (the spans must
+exist verbatim in the filing); and wider data surfaces messier XBRL/HTML than the 10 clean
+starters did — expect data-plumbing days, not AI days.
+**Definition of complete:** S&P-100-scale corpus with ≥2yr of 10-Ks; an honest eval over ≥30 Qs /
+≥5–8 companies committed with its real (not cherry-picked) scores.
+**Demo:** ask the same kind of question across a dozen different companies and get cited answers;
+show the eval report.
+
+### Milestone 7 — Cross-filing diffs: "what changed since last year"  ★ flagship feature (≈3–4 sessions) — depends on: M6 (≥2yr corpus)
+The single most differentiated, demoable, *and* personally useful AI feature on the list — and it's
+the README's own headline example. This is the one that makes a technical reviewer lean in.
+
+- [ ] Align comparable sections across two filings of the same company/form (e.g. FY2024 vs FY2023
+      Item 1A Risk Factors) using the existing `filing_sections` + char offsets.
+- [ ] Produce a **grounded, cited diff**: what was added / removed / materially reworded, each side
+      linking to its source span — *not* a raw text diff; a readable "here's what changed and why it
+      matters," still under the cite-or-abstain + numbers-guard contract.
+- [ ] UI: a side-by-side or change-summary view with deep links into both filings.
+- [ ] Golden test for the diff on a known pair (assert a real, known change is surfaced and a known
+      non-change is not).
+
+**The genuinely hard part:** semantic (not textual) diffing that stays grounded — section alignment
+across years where headings/order drift, and summarizing change without hallucinating significance.
+This is where the trust spine gets its hardest test; hold the line on grounding.
+**Definition of complete:** pick a company, pick two years, get a cited summary of what changed in
+the risk factors (or MD&A) that a human can verify from the linked sources.
+**Demo:** "How did Apple's risk factors change from 2023 to 2024?" → a cited, verifiable answer.
+
+### Milestone 8 — Cited investment memo (the research-OS capstone) (≈3–5 sessions) — depends on: M6, M7
+The crown of the "research operating system" vision: generate a structured, **fully cited**,
+human-editable memo on a company — pulling financials, filing answers, and (if present) cross-year
+changes into one thesis object that lives in the workspace. Leans on everything already built.
+
+- [ ] A `memo` / `thesis` object (per company, owned by the user, under RLS like notes/watchlists).
+- [ ] Structured generation (e.g. Business / Financials / Risks / What-changed), every claim cited
+      to a filing span or a financial line item; the **numbers guard extended to multi-paragraph
+      prose** (no figure that isn't sourced).
+- [ ] Human-in-the-loop editing (it drafts; you correct and keep) — the memo is yours, not the
+      model's.
+- [ ] Save to the workspace; viewable/editable later (persistence + RLS).
+
+**The genuinely hard part:** keeping a *long, multi-section* generation faithful — long outputs are
+where grounding decays and the guard matters most; and a genuine human-edit/version workflow, not a
+one-shot dump.
+**Definition of complete:** generate a cited draft memo for a company, edit it, reload tomorrow and
+it's still there with every figure traceable to a source.
+**Demo:** "Draft me a cited research memo on NVDA" → a structured, sourced, editable memo you'd
+actually keep.
 
 ---
 
-## Where the time really goes (so you plan for it)
-The AI features come together faster than expected. The grind is the unglamorous plumbing — parsing messy SEC HTML, mapping inconsistent XBRL tags to clean line items, rate limits, auth/permissions. Phase 1's hardest days are **data-pipeline days, not AI days**. That's normal and it's where similar projects stall. Expect it; don't read it as failure.
+## Phase 3 — Breadth (optional, demand-driven; pick what you'd actually use)
+
+Only after Phase 2. Each is independently valuable; none is load-bearing. Sequence by what *you*
+want for personal research vs. what rounds out the portfolio.
+
+- [ ] **Side-by-side multi-company comparison** (cheap once corpus is wide; good demo).
+- [ ] **Fundamentals screener** over the cached universe (personally useful; modest portfolio lift).
+- [ ] **Earnings-transcript ingestion** — *first validate a genuinely free, clean source* (the $0
+      constraint is the risk here); then it flows through the same RAG/guard spine. Honors the
+      README promise and widens the corpus beyond filings.
+- [ ] **FRED macro layer** (rates/yield-curve/CPI + an AI macro digest) — free API, easy, nice
+      breadth; off the core thesis, so treat as a small side-quest.
+- [ ] **Retrieval re-ranking (cheap cross-encoder)** — *conditional:* build only if M6's wider eval
+      reveals a real precision problem. Don't pre-optimize a metric that's currently 1.00.
+
+---
+
+## What I cut, and why (so it's a decision, not an omission)
+- **Sharing / public cited memos**, **paid-tier gating** — product/monetization features; off the
+  locked goals (startup de-prioritized).
+- **Learning layer**, **portfolio/CSV import**, **alerts/scheduler** — low leverage for personal-use
+  + portfolio at $0, or operationally heavy at $0. Revisit only if the goals change.
+  *(Any of these is a one-line un-cut if James decides otherwise — surfacing, not deciding.)*
+
+## A strategic choice for James (I'm flagging, not deciding)
+After M5+M6, the flagship feature order is **M7 (diffs) then M8 (memo)**. If your priority is the
+*single most impressive demo*, M8 (a cited memo) is the bigger "wow"; if it's the *most defensible,
+verifiable* showcase of the trust spine, M7 (diffs) is safer and lands sooner. I sequenced
+M7→M8 (diffs are an input to a good memo, and the lower-risk build first), but the order is yours.
+
+---
+
+## Where the time really goes (unchanged truth, still true)
+The AI features come together faster than expected. The grind is the unglamorous plumbing — messy
+SEC HTML, inconsistent XBRL, rate limits, auth/permissions, and now **first-deploy ops** (hosted DB
++ migrations + cross-origin auth). Phase 2's hardest days are deploy days and data-breadth days, not
+model days. Expect it; it's where similar projects stall.
 
 ## Prompting your AI assistant — quick reference
 - **You're the architect/reviewer; the AI is a fast, overconfident junior engineer.** Give scoped jobs, check the work.
-- **Point it at context first:** the relevant doc + existing files, then the task. "Add X consistent with this schema and this file" beats a cold "build X."
-- **One vertical slice per prompt.** Concrete and reviewable, not "build the backend."
-- **Match style to risk:**
-  - *Boilerplate / UI / CRUD / tests* → prompt freely, skim-review. High speed, low risk.
-  - *Grounding prompt, RAG glue, anything touching numbers users see, auth/RLS, caching* → go slow, ask it to explain its approach first, read every line.
-- **Make it reason before it writes** for anything non-trivial.
-- **Verify financial/AI output against reality** — golden fixtures for numbers, golden Q&A set for answers. "Looks right" is untrustworthy for any number on screen.
-- **Use it as a reviewer** — before merging a branch, ask it to review the diff for bugs, security, edge cases.
-- **Ask for trade-offs, not answers**, on real decisions — you learn the domain, which is half the point.
-- Resist generating huge swaths at once just because it's fast. Stay the human who understands every important part.
+- **Point it at context first:** the relevant doc + existing files, then the task.
+- **One vertical slice per prompt.** Concrete and reviewable.
+- **Match style to risk:** boilerplate/UI/CRUD/tests → prompt freely, skim-review; grounding/RAG glue/numbers/auth/RLS → go slow, read every line.
+- **Verify financial/AI output against reality** — golden fixtures for numbers, golden Q&A for answers. "Looks right" is untrustworthy for any number on screen.
+- **Use it as a reviewer** before merging; **ask for trade-offs, not answers** on real decisions.
+- Stay the human who understands every important part.

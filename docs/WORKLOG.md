@@ -23,6 +23,59 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-22 — Sally (Opus) — reviewed + endorsed Vera's Phase-2 reset
+**Prompted to:** Review Vera's end-of-Phase-1 audit + new roadmap as lead, and act on it.
+**Did:** Read the rewritten ROADMAP.md end-to-end (not just Vera's summary) — coherent, goal-aligned,
+Definition of Complete intact (+ "pushed & visible" for portfolio milestones), reasoned cut-list,
+sound M5→M6→M7→M8 sequence. Endorsed. Independently back her read: the M4 RLS/auth/security work she
+praised was verified across this session, and James ran `pytest` → **47 passing** (RLS suite included)
+on his machine. A real AUTH_SECRET_KEY was already set in the local .env this session (M5 still needs a
+rotated one for the hosted demo).
+**Lead additions (my recommendations):** (1) M5 public demo — guard the live `/ask` (login or a strict
+per-IP/day cap) AND ship a "demo mode" of pre-cached cited answers for ~3 showcase companies so the
+money-shot always renders even when the Gemini daily quota is spent. (2) README must state the eval
+honestly (13 Qs / 2 companies, 13/13 — not an unqualified "100%") until M6 widens it. (3) On Vera's
+flagged M7-vs-M8 order: I concur with M7 (diffs) before M8 (memo) — lower-risk, feeds the memo, and
+"what changed" is the sharpest showcase of the trust spine.
+**Next / handoff:** M5 (Ship & Showcase) is the active milestone. Immediate (James): finish the M4
+click-through, commit + push, make the repo public; then the hosted deploy (Vercel + Neon/Supabase) is
+the engineering slice for Alexander. Sally to write M5 prompt(s) — bounded, deploy as its own slice — on
+James's go.
+**Roadmap:** Phase 2 plan adopted (Vera's reset). No milestone boxes ticked yet (M5 just starting).
+
+---
+
+### 2026-06-22 — Vera (independent advisor, Opus) — end-of-Phase-1 review + new forward plan
+**Prompted to:** Full project review at end of Phase 1 (M0–M4 complete), diffed vs the M3 STATUS;
+then write the NEW forward roadmap (old milestone list exhausted). Verify, don't trust summaries.
+**Did:**
+- Audited the real repo by direct host read (sandbox bash/git lagged badly — it served a stale
+  `requirements.txt`; host reads are truth). Verdict: **Phase 1 is substantively done and strong.**
+- **My M3 concerns were addressed, not papered over:** numbers guard built (`app/rag/guard.py`),
+  wired into `answer.py` + `routers/ask.py` (fresh AND cached), surfaced in the reader; deps pinned
+  + `.env.example` complete (clean-clone hole closed); faithfulness now 13/13.
+- **M4 verified solid:** argon2 + JWT httpOnly-cookie auth (fail-closed); RLS with ENABLE+FORCE,
+  non-superuser `mosaic_app` role, fail-closed GUC, USING+WITH CHECK, commit contract (`app/rls.py`);
+  real cross-user security test (DB+API, no-pooling-leak, 404-not-403) covering watchlists + notes.
+- **Scored every charter dimension, diffed vs M3:** AI/trust ⬆ AT-RISK→ON-TRACK (guard closes the
+  gap); career value rising; the rest on-track. Reframed "risk" (defensibility de-prioritized) to
+  *the artifact under-selling itself*.
+- Rewrote `docs/ROADMAP.md` as the **Phase-2 plan**: re-scored the old Phase 2–4 grab-bag (kept/
+  reordered/cut table), and set **M5 Ship & Showcase → M6 Corpus+Eval → M7 Cross-filing diffs
+  (flagship) → M8 Cited memo**, with effort estimates + per-milestone definitions of complete.
+  Updated `docs/STATUS.md` (dated 2026-06-22, diff-able).
+**Verified:** All by direct file read (guard.py, auth.py, rls.py, migrations 0007–0009, test_rls.py,
+the `(app)` gating, README, DECISIONS). **NOT verified in-sandbox — James to confirm in terminal:**
+pytest count (claimed 47), live click-through, whether M4 is pushed, whether repo is public.
+**Next / handoff:** Highest-leverage move = **M5: ship it** — push M4, make repo public, README
+screenshots/GIF, real `AUTH_SECRET_KEY`, live $0 demo (Vercel + Neon/Supabase). The build is done;
+the showcase isn't. Then M6 widens corpus + eval (the 13-Q/2-company base is the main remaining
+trust caveat). Full reasoning in STATUS.md + ROADMAP.md. Did NOT commit (per protocol).
+**Roadmap:** Replaced the milestone plan. Phase 1 marked complete; new Phase 2 (M5–M8) + Phase 3
+(optional breadth) written. No code touched.
+
+---
+
 ### 2026-06-22 — Bobby (Sonnet 4.6) — Gemini key install + git index.lock fix + M4 commit
 **Prompted to:** Session onboarding; add Gemini API key; fix git commit failure; assist M4 commit.
 **Did:**

@@ -1,180 +1,184 @@
 # Mosaic — Independent Status Assessment
 
 **Author:** Vera (independent strategic & technical advisor)
-**Date:** 2026-06-19
-**Checkpoint:** End of Milestone 3 — "Ask this filing" (the wedge)
-**Basis:** Direct read of the real repo — README, ROADMAP, DECISIONS, WORKLOG, the role
-manuals, and the actual code, tests, migrations, and git history in `services/api` and
-`apps/web`. Claims spot-checked against source, not summaries.
+**Date:** 2026-06-22
+**Checkpoint:** End of Phase 1 — Milestones 0–4 complete + design-system polish
+**Previous assessment:** 2026-06-19 (end of M3). This is a diff against that.
+**Basis:** Direct host-file reads of the real repo — `app/rag/*` (incl. the new `guard.py`),
+`app/auth.py`, `app/rls.py`, migrations 0005–0009, `tests/test_rls.py`, the frontend `(app)`
+route group + gating, README, ROADMAP, DECISIONS, WORKLOG. Runtime claims (pytest, live demo,
+push/public state) flagged for James to confirm in his own terminal. *Note: the sandbox `bash`/git
+view lagged the real files badly this session — e.g. it showed an old `requirements.txt`; the host
+reads are the source of truth, and they're good.*
 
 ---
 
 ## Overall verdict
 
-**On-track, and genuinely good — with two real holes that are cheap to fix but must be fixed
-before anyone calls M3 "done."**
+**Phase 1 is, in substance, done — and it's genuinely strong work. The build is no longer the
+question; the showcase is.** Every concern from my M3 review was addressed, not papered over:
 
-The wedge works. I read the whole grounding path end-to-end — chunking → local bge embeddings →
-hybrid RRF retrieval → cite-or-abstain answer → offset-deep-linked citations in the reader — and
-it is real, coherent, and well-reasoned, not demo-ware. The engineering judgment on display
-(diagnosing IDF-less `ts_rank` as the recall killer, honoring bge query/passage asymmetry, an
-eval that *credits abstention on a retrieval miss* instead of gaming the number) is senior-grade.
-The $0 constraint is holding. The three-AI + WORKLOG protocol is genuinely working.
+- The **numbers guard** I called the #1 trust gap is built (`app/rag/guard.py`), wired into the
+  answer path *and the cached path* (`routers/ask.py`), tested, and surfaced in the reader. The
+  spine's thinnest point now has code behind it, not just a prompt.
+- The **clean-clone hole** is closed: `requirements.txt` pins pgvector/sentence-transformers/
+  google-genai/argon2/PyJWT with the CPU-torch pre-step documented; `.env.example` is complete
+  (APP_DATABASE_URL, AUTH_SECRET_KEY, the RAG vars). The README setup now matches reality.
+- **M4** delivered the hard, must-be-correct milestone cleanly: argon2 + JWT httpOnly-cookie auth,
+  **DB-enforced Postgres RLS** via a non-superuser `mosaic_app` role, and a real cross-user
+  security test. This is the part most solo projects fake or skip. It isn't faked here.
 
-What stops me from signing off completely is not the build — it's the **gap between "works on the
-dev machine" and "verifiably done."** Two things:
+What remains is not engineering — it's **shipping**: the repo is still private, there's no live
+demo URL, no screenshots/GIF, and (per Bobby's last WORKLOG) M4 may not be pushed yet. A portfolio
+piece nobody can see or click is worth a fraction of its real quality. That gap, plus a thin
+evidence base (13 evals / 2 companies) and a thin corpus (10 companies), is the whole story now.
 
-1. **A clean clone cannot start the API.** `requirements.txt` is missing four runtime
-   dependencies the code imports (`pgvector`, `sentence-transformers`, `torch`, `google-genai`),
-   and `.env.example` omits the M3 env vars. "main is green" is true on exactly one computer.
-2. **The trust spine's thinnest point is unguarded.** There is no runtime check that a *number*
-   in an answer actually appears in the retrieved excerpts. For the one output Mosaic exists to
-   protect, trust currently rests on a prompt, `temperature=0`, and a 10-question eval.
-
-Neither is hard to close. Both matter more than any new feature right now.
+**One-line verdict:** the work earned an A; the *presentation* is still a C, and closing that is
+the highest-leverage thing left in Phase 1.
 
 ---
 
-## Dimension scorecard
+## Dimension scorecard (diffed vs M3, 2026-06-19)
 
-### Product & vision — ON-TRACK
-The wedge ("Ask this filing," grounded cited Q&A) is the right wedge and the build sequence
-served it: infra (M0) → real financials (M1) → filings + section segmentation (M2) → RAG (M3),
-each a vertical slice. Nothing premature was built. The differentiator — a footnote `[n]` that
-deep-links to the exact source char range in the reader (`reader.tsx`, offset-sliced from the
-immutable `content_text`) — is real and is the "oh, that's actually useful" moment the roadmap
-promised. *Evidence: `apps/web/.../reader.tsx`, `app/rag/answer.py`, ROADMAP M0–M3.*
+### Product & vision — ON-TRACK (was on-track) — unchanged, delivered
+The wedge now lives inside a real workspace: watchlists, notes, a gated personal area over a public
+browse experience. That's the "OS, not a lookup" promise from the roadmap actually shipped, not
+sketched. No scope creep — M4 was always on the plan. The public-browse / gated-workspace split
+(`app/(app)/layout.tsx`: browse is public, personal pages self-guard) is exactly right for a
+portfolio demo — a recruiter sees value before any signup wall. *Evidence: `(app)` route group,
+`server-api.ts` cookie-forwarding, `notes-panel.tsx` anonymous→"log in to add notes".*
 
-### Technical architecture — ON-TRACK
-Sound and correctly *under*-engineered for a solo+AI build. One Postgres+pgvector for
-relational + vector + full-text; RRF chosen specifically so the cosine and `ts_rank` scales never
-need normalizing; real seams that aren't theater (`LLMClient`, `DocumentStore`, the embeddings
-module as the single encode path). Deliberate deferrals (R2, SQL view, `services/ingest`) are
-documented in DECISIONS with sound reasoning. 384-dim is locked into migration 0004 — an honest,
-acknowledged constraint. *Evidence: `app/rag/retrieve.py`, `app/llm/`, DECISIONS 2026-06-18.*
+### Technical architecture — ON-TRACK (was on-track) — strengthened
+The RLS implementation is the standout: `ENABLE` + `FORCE` (owner-bypass closed), a dedicated
+`NOSUPERUSER NOBYPASSRLS` role, fail-closed GUC (`NULLIF(current_setting(...),'')::int` → no rows),
+both `USING` and `WITH CHECK`, child-table policy keyed through parent ownership, and a documented
+**commit contract** (`app/rls.py`: the dependency is the sole committer so a mid-handler commit
+can't clear the transaction-scoped GUC). That is senior-grade and rare. Seams from M3 still hold.
+One honest nit: architectural *breadth* (auth, RLS, RAG, ingest, design system) now slightly
+outpaces *depth* (10 companies, 13 evals) — appropriate for a portfolio build, but the depth is
+where the next leverage is. *Evidence: migrations 0007–0009, `app/rls.py`.*
 
-### AI / trust quality — AT-RISK
-The scaffolding is excellent — abstain-without-an-LLM-call on empty retrieval, a golden set whose
-spans are verified verbatim against real filing text before scoring, multi-span IR-correct recall,
-and an eval that distinguishes a retrieval miss from an unfaithful answer. **recall@8 = 1.00 is
-real and re-run, not projected.** I am scoring this AT-RISK *despite* the quality, for three
-reasons: (a) **no runtime numbers guard** — nothing programmatic stops a fabricated figure; the
-only `.isdigit()` in the RAG path is citation parsing. (b) The evidence base is thin: 13 questions,
-heavily single-company (7 AAPL / 3 MSFT), with **2 of 3 abstention checks still unconfirmed**
-(quota-blocked). (c) recall@8 = 1.00 over 10 questions should read as "no failures observed yet,"
-not "solved." The spine is well-built but lightly tested for something this load-bearing.
-*Evidence: `app/rag/answer.py`, `app/eval/run_eval.py`, `tests/golden_qa.json`, WORKLOG 06-19.*
+### AI / trust quality — ON-TRACK (was **AT-RISK**) — ⬆ upgraded, the key improvement
+The structural gap is closed. `guard.py` verifies every ≥4-digit figure in an answer traces to the
+retrieved text (digit-core substring match), flag-and-warns rather than silently withholding, and
+documents its own blind spot (a *re-scaled* "383.3 billion" vs a source "383,285 million" won't
+match without unit-aware parsing). cite-or-abstain holds; abstain-without-LLM on empty retrieval;
+faithfulness now **13/13** with all 3 unanswerable questions abstaining. I'm upgrading this to
+on-track because the spine is now enforced in code, not just prompted. **The caveat that keeps it
+honest:** the eval base is still tiny — 13 questions over **2 companies** (AAPL/MSFT). recall@8 =
+1.00 and faithfulness = 1.00 should read as "no failures observed yet," not "robust." To *stay*
+on-track as the corpus grows, the eval must widen (see plan M6). *Evidence: `guard.py`,
+`answer.py`, `tests/golden_qa.json`, `routers/ask.py`.*
 
-### Execution & velocity — ON-TRACK
-M0 → M3 inside roughly two calendar days (WORKLOG timestamps), with clean handoffs and visible
-discipline: Alexander diagnosed weak recall, **probe-validated the fix read-only, and stopped at
-the eval gate rather than tuning blindly.** That is exactly the behavior you want and rarely get.
-The WORKLOG-as-shared-memory protocol is doing its job. *Evidence: WORKLOG 06-18/06-19 entries.*
+### Execution & velocity — ON-TRACK (was on-track) — the team responded to review
+M4 — the security milestone — landed cleanly, and notably the team *acted on my M3 findings*
+(pinned deps, built the guard, closed faithfulness). The three-AI/WORKLOG protocol is working as
+designed: M4b's own security test **caught its own superuser-bypass bug**, which DECISIONS records
+honestly and migration 0008 fixes. A process that catches its own security holes is the process
+working. *Evidence: DECISIONS 2026-06-19 M4 amendment, WORKLOG M4 entries.*
 
-### Cost & operations — ON-TRACK
-$0 is holding honestly: local bge embeddings (no API cost, no rate limit on bulk ingest), Gemini
-free tier, local Postgres, free SEC EDGAR. No paid service appears anywhere in `.env.example`.
-The one real operational fact: the Gemini free tier (~20 req/day/model) is genuinely constraining
-— it is *why* M3 isn't 100% closed, and it makes `answer_cache` load-bearing rather than a nicety.
-Fine for personal use; a throttle for any live-Q&A demo. *Evidence: `.env.example`, `app/llm/gemini.py`, DECISIONS 06-19.*
+### Cost & operations — ON-TRACK (was on-track) — but the question is shifting
+Still $0: local bge embeddings, Gemini free tier, local Postgres, free EDGAR; no paid service in
+`.env.example`. The forward watch: the Gemini free tier (~20 req/day/model) is a real ceiling for a
+*live public demo* — a recruiter poking a deployed app could exhaust it in a sitting (answer_cache
+helps for repeats, not first-time questions). And there's still no hosted deploy. The question is
+moving from "is it $0?" (yes) to "can it be $0 *and* publicly demoable?" — answerable yes (Vercel +
+Neon/Supabase free tiers), but it's unbuilt work. *Evidence: `.env.example`, `gemini.py`.*
 
-### Risk & defensibility — AT-RISK (inherent, not a regression)
-The investor critique stands. The moat is thin: RAG-over-public-filings is reproducible by anyone,
-and the data is free/public (great for $0, weak for defensibility). Single-LLM-provider dependency
-is seam-mitigated but still a single point. The corpus is 10 companies × latest two 10-Ks — right
-for a wedge, not a product. None of this is a reason to stop; it is the honest ceiling on the
-"this could be a company" goal. The sharper, harder-to-copy asset is the *persistent research
-workspace* (memos, notes, theses as first-class objects) — that, not the RAG, is where a real moat
-could live. *Evidence: README "What makes it different," ROADMAP Phase 2.*
+### Risk — AT-RISK (reframed; defensibility de-prioritized per charter) — what the risk now *is*
+Startup/defensibility is no longer a goal, so the relevant risk isn't "a competitor out-builds the
+moat." It's **the artifact under-selling itself**: (1) demo fragility — no live URL, free-tier
+quota, dev-placeholder `AUTH_SECRET_KEY`; (2) thin corpus + eval making genuinely impressive
+engineering look smaller than it is under scrutiny. Both are fixable and both are about
+*presentation of quality*, not quality itself. *Evidence: ROADMAP "Make it presentable" (3 of 4
+unchecked), 10-company corpus, 13-question eval.*
 
-### Career value — ON-TRACK (high ceiling, packaging gap)
-The work is genuinely recruiter-impressive: real RAG with honest evals, an articulated trust
-contract, IR-literate retrieval reasoning, a clean full-stack vertical slice, and a DECISIONS log
-that by itself signals senior judgment. But **a recruiter cannot currently clone and run it**
-(the reproducibility hole), there are no screenshots/GIF/demo, and the repo is still private. The
-work is A-grade; the packaging is C-grade. Closing that is the cheapest, highest-leverage career
-move available. *Evidence: DECISIONS.md, ROADMAP "Make it presentable" (all unchecked), repo state.*
+### Career value — ON-TRACK, rising (was on-track w/ packaging gap) — ⬆ trajectory
+The work is now demonstrably senior across exactly the surfaces the goal names: grounded RAG with a
+real trust spine *and a numbers guard*, DB-enforced RLS with a security test, from-scratch auth,
+full-stack with a polished design system. The M3 packaging gap is *half* closed (README is
+clean-clone-able; the UI is Linear/Vercel-grade). The other half — **make it visible** — is now
+THE career lever: private repo, no live URL, no screenshots/GIF, AUTH_SECRET_KEY placeholder, maybe
+unpushed. The build is done; the showcase isn't. *Evidence: DECISIONS design-system entry, README,
+WORKLOG (push pending).*
+
+---
+
+## Goal alignment (locked: personal-use + recruiter-portfolio, at ~$0)
+
+**Well-aligned, no meaningful drift.** Everything built serves one or both locked goals, and the
+charter's de-prioritization of startup/defensibility is being respected (no monetization,
+sharing-product, or paid-tier work crept in). Two honest watch-items, neither a violation:
+
+- **Personal-use is still demo-shaped.** 10 companies × latest two 10-Ks isn't enough for you to
+  actually run your own research on it, and the README's broader data sources (yfinance, FMP, FRED)
+  are aspirational — only SEC EDGAR is wired. Closing this is corpus work (plan M6), not a pivot.
+- **Watch for breadth-over-depth.** The instinct to add the next feature is strong; the higher-
+  leverage move now is to deepen what exists (corpus + eval + the one or two flagship AI features)
+  rather than spread thin. The new roadmap is built around that.
 
 ---
 
 ## The 3 biggest risks right now
 
-1. **The reproducibility hole quietly invalidates "done."** `app/models.py:12` imports
-   `pgvector.sqlalchemy` at module top — so the ORM, and therefore the entire API, fails to import
-   on a fresh `pip install -r requirements.txt`. `torch`, `sentence-transformers`, and
-   `google-genai` are also imported but unpinned, and `.env.example` is missing `GEMINI_API_KEY`,
-   `LLM_MODEL`, and `EMBEDDING_MODEL`. This contradicts what the WORKLOG records as done, and it
-   silently breaks the README, the next AI's onboarding, and any recruiter clone. Cheapest fix
-   here, highest blast radius if left.
-
-2. **The trust spine has no numbers guard, and a thin eval base.** Mosaic exists because "generic
-   AI hallucinates on filings." Today that promise is defended by a prompt + `temperature=0` + ~10
-   verified questions — not a guarantee. One confidently wrong number in a demo undoes the entire
-   thesis. The fix is small (flag any answer-number absent from the retrieved excerpts; expand the
-   golden set to include numeric questions across more companies).
-
-3. **The working tree is not clean, and the sandbox git view is alarming.** Sandbox `git status`
-   shows *staged deletions of every core source file* (`models.py`, `main.py`, `rag/*`,
-   `routers/*`, `llm/*`) — almost certainly index lag (the files are present and correct on disk),
-   **but you must confirm this in your own terminal before committing — committing that state would
-   delete the codebase.** Separately, there is a real pile of uncommitted modifications
-   (`config.py`, `reader.tsx`, `run_eval.py`, `edgar.py`, `.env.example`, `ONBOARDING.md`) beyond
-   the last commit: M3 is "committed" but the tree is not in a clean, known-good state.
+1. **The work is done but undemonstrated.** Repo private, likely unpushed, no live URL, no
+   screenshots/GIF, `AUTH_SECRET_KEY` a dev placeholder. The single biggest gap between what Mosaic
+   *is* and what a recruiter can *see*. Pure upside, low effort.
+2. **Trust claims rest on a thin evidence base.** 13 questions / 2 companies; 1.00 scores mean "no
+   failures yet," not "robust," and the numbers guard has a known rescaling blind spot. A harder
+   question over a wider corpus is where the headline numbers get tested — widen the eval before
+   that happens accidentally in front of someone who matters.
+3. **Corpus depth caps real personal-use value.** Without more companies, more years, and (per the
+   README's own promise) transcripts, "personal use" stays a demo rather than a tool you'd open on
+   a Monday to research a real position.
 
 ---
 
 ## Single highest-leverage next move
 
-**Close the gap between "works on my machine" and "verifiably done," in one short session — do not
-start anything new until it's done.** Concretely: pin the four missing deps (with the CPU-only
-`torch` index URL), add the missing vars to `.env.example`, verify a *clean clone* boots the API,
-run the final two abstention checks when the Gemini quota resets, eyeball one live cited-answer
-click-through, and commit a clean tree. That single session converts "~95%, works locally" into
-"done and shareable," which simultaneously unblocks the trust claim's credibility, the career value,
-and the next Sally's onboarding. It is cheap and it unlocks everything downstream.
+**Ship it — make Mosaic publicly demonstrable.** In one focused push: `git push` M4, make the repo
+public with a real README (screenshots + a ~30-second GIF of a cited, deep-linked answer), set a
+real `AUTH_SECRET_KEY`, and stand up a live $0 demo (Vercel + Neon/Supabase free tier) seeded with
+the existing corpus. This converts the strongest part of the project — the build — into the thing
+it exists for: a portfolio piece people can see and click. It's mostly packaging and ops, not new
+engineering, and it unlocks the career goal immediately. This is Phase 1's finish line; see
+ROADMAP **M5 — Ship & Showcase**.
 
 ---
 
 ## Start / Stop / Change
 
 **Start**
-- A runtime numbers-faithfulness check — even a cheap one: if a number in the answer is not found
-  in any retrieved excerpt, force an abstain or flag it. Guard the spine in code, not just prompt.
-- Expanding the golden set to ≥30 questions across ≥5 companies, including numeric questions.
-- Packaging for the audience that matters: screenshots + a short GIF, then make the repo public —
-  but only *after* the clean-clone fix, or the first impression is a stack trace.
+- Treating "shipped and visible" as part of done for Phase 1 — a live URL beats "clone and run."
+- Widening the golden eval (≥30 Qs / ≥5–8 companies, including numeric and cross-section) — it's
+  both a trust safeguard and a credibility multiplier for the headline numbers.
 
 **Stop**
-- Calling milestones "done/green" on dev-machine-only verification. "Done" must mean "a clean clone
-  runs it." Logging is already part of your definition of done; extend it to reproducibility.
-- Adding companies, filings, or new features until M3 is verifiably closed and committed clean.
+- Adding new feature *areas* before M5 (ship) and M6 (corpus+eval) land. Depth, then breadth.
+- Leaving the dev `AUTH_SECRET_KEY` in place one day longer than the first public/hosted step.
 
 **Change**
-- Fold reproducibility + a clean committed tree into the Definition of Done (see ROADMAP).
-- Soften the "startup" goal language to **portfolio + personal-use first, startup-optional** until
-  there's a sharper moat — *or* pick one defensibility angle (the persistent research-workspace /
-  memo layer is the candidate; it's harder to copy than RAG) and aim Phase 2 squarely at it. This
-  is a strategic call and it's yours — I'm flagging it, not making it.
+- Point the next two months at **deepening the wedge into its best self** (diffs, then a cited
+  memo) rather than collecting more surface features. The new roadmap encodes this; the old Phase
+  2–4 grab-bag is re-scored there (kept / reordered / cut, each with a reason).
 
 ---
 
-## What I verified (so the next reader can trust this)
+## What I verified this session (so the next reader can trust this)
 
-- **recall@8 = 1.00** claim — consistent with `run_eval.py` logic and the multi-span `golden_qa.json`;
-  the methodology is honest (verbatim span check, abstention credited on miss). Not independently
-  re-run in-sandbox (no DB/deps here) — *James, confirm with `python -m app.eval.run_eval` in your
-  terminal.*
-- **25/25 pytest** — 25 test functions exist (`test_chunking` 7, `test_filing_sections` 5,
-  `test_golden_financials` 4, `test_golden_qa_set` 3, `test_grounding` 6). `test_grounding` uses an
-  injected fake LLM (offline, good). Counts match the claim; a live run needs your terminal.
-- **Grounding contract** — enforced in `answer.py` (answer-only-from-excerpts prompt, exact-string
-  abstention, abstain-without-LLM on empty retrieval, grouped-citation parsing). Confirmed in code.
-- **$0 constraint** — no paid service in `.env.example`; embeddings local; LLM on free tier. Holds.
-- **The two holes above** — confirmed directly: `requirements.txt` (6 deps, none of the M3 four),
-  `models.py:12` top-level pgvector import, `.env.example` (no LLM/embedding vars), and no numeric
-  runtime guard in `app/rag/`.
+- **Numbers guard** — read `guard.py` end-to-end; confirmed it's called in `answer.py` and returned
+  by `routers/ask.py` on both fresh and cached paths. Real, not decorative.
+- **RLS** — read migrations 0007–0009 + `app/rls.py` + `tests/test_rls.py`: FORCE on, non-superuser
+  role, fail-closed GUC, USING+WITH CHECK, no-pooling-leak + commit-contract tests, 404-not-403 on
+  cross-user (no existence leak), covers watchlists AND notes. Genuinely solid.
+- **Auth** — argon2, HS256 JWT, httpOnly + SameSite=Lax cookie, Secure gated on env, exp verified,
+  fail-closed to 401. Sound.
+- **Clean-clone fix** — confirmed by direct read: `requirements.txt` and `.env.example` are now
+  complete (the sandbox bash showed a stale copy; host reads are correct).
+- **NOT verified in-sandbox (confirm in your terminal):** `pytest` count (claimed 47), the live
+  cited-answer click-through, whether M4 is pushed, and whether the repo is public.
 
 ---
 
-*Next checkpoint: re-run this assessment after M3 is committed clean and M4 (persistence + RLS)
-lands. Diff against this file. — Vera, 2026-06-19*
+*Next checkpoint: after M5 (shipped/visible) and M6 (wider corpus+eval). Diff against this file.
+— Vera, 2026-06-22*

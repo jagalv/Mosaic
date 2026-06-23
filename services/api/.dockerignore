@@ -1,0 +1,11 @@
+# Keep the HF Spaces build context small + reproducible. Build context is
+# services/api, so these are relative to that directory.
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.cache/
+tests/
+*.md
+.env
+.dockerignore

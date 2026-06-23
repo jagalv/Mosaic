@@ -15,17 +15,59 @@ reader's source text.
 
 import hashlib
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.db import get_session
 from app.llm import get_llm_client
 from app.models import AiInteraction, AnswerCache, Filing, FilingDocument
 from app.rag.answer import answer_question
+from app.rate_limit import client_ip, over_cap, record_call
 
 router = APIRouter()
+
+# Shown when the shared daily Gemini budget is spent (rate cap or provider 429).
+_DEMO_MODE_MESSAGE = (
+    "This live demo runs on a shared free-tier model with a small daily "
+    "question budget, which is currently used up — so this question wasn't sent "
+    "to the model. Try one of the pre-answered showcase questions below; they "
+    "always work."
+)
+
+
+def _demo_mode_response(db: Session, provider: str, model: str) -> dict:
+    """A friendly, additive demo-mode payload (never a 500). `suggestions` are
+    drawn from REAL cached, non-abstained answers, so every one is guaranteed to
+    resolve instantly as a cache hit (the pre-seeded showcase Q&As)."""
+    rows = db.execute(
+        text(
+            "SELECT c.ticker, f.accession_no, ac.question "
+            "FROM answer_cache ac "
+            "JOIN filings f ON f.id = ac.filing_id "
+            "JOIN companies c ON c.cik = f.cik "
+            "WHERE ac.abstained = false "
+            "ORDER BY ac.created_at DESC "
+            "LIMIT 3"
+        )
+    ).all()
+    suggestions = [
+        {"ticker": r.ticker, "accession_no": r.accession_no, "question": r.question}
+        for r in rows
+    ]
+    return {
+        "answer": _DEMO_MODE_MESSAGE,
+        "abstained": False,
+        "citations": [],
+        "unsupported_numbers": [],
+        "cached": False,
+        "provider": provider,
+        "model": model,
+        "latency_ms": 0,
+        "demo_mode": True,
+        "suggestions": suggestions,
+    }
 
 
 class AskRequest(BaseModel):
@@ -74,7 +116,10 @@ def _log_interaction(
 
 @router.post("/filing/{accession_no}/ask")
 def ask_filing(
-    accession_no: str, body: AskRequest, db: Session = Depends(get_session)
+    accession_no: str,
+    body: AskRequest,
+    request: Request,
+    db: Session = Depends(get_session),
 ) -> dict:
     filing = db.scalar(select(Filing).where(Filing.accession_no == accession_no))
     if filing is None:
@@ -128,7 +173,25 @@ def ask_filing(
             "latency_ms": 0,
         }
 
-    result = answer_question(db, filing.id, body.question, llm_client=client)
+    # Cache MISS -> the live path. It's anonymous and burns the shared Gemini
+    # budget, so guard it: over the per-IP OR global cap -> demo-mode (no LLM
+    # call); any LLM failure (e.g. a per-day 429) -> demo-mode, NEVER a 500.
+    ip = client_ip(request)
+    if over_cap(db, ip):
+        return _demo_mode_response(db, provider, model)
+
+    try:
+        result = answer_question(db, filing.id, body.question, llm_client=client)
+    except Exception:
+        # The 404s above are raised before this block, so we don't mask them.
+        return _demo_mode_response(db, provider, model)
+
+    # Count only a REAL Gemini call: a non-empty retrieval means generate() ran.
+    # An empty retrieval abstains without spending the budget (answer.py), so it
+    # stays free and uncounted.
+    if result.retrieved:
+        record_call(db, ip)
+
     citations = [
         {
             "marker": c.marker,

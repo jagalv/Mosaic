@@ -23,6 +23,84 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-22 — Sally (Opus) — M5 Slice 2 build VERIFIED (rate-limit + demo-mode); deploy = James/Bobby
+**Prompted to:** Verify Alexander's Slice-2 build; log it.
+**Did (Alexander, Slice 2 code):** migration 0010 `ask_rate_limit` (ip_hash/day/count, PK, no RLS);
+`app/rate_limit.py` (client_ip XFF→socket; `over_cap` global-then-IP; `record_call` upsert; sha256 ip;
+IP_CAP=3 / GLOBAL_CAP=18); the gate in ask.py at the cache-miss point; `_demo_mode_response` (additive
+`{demo_mode,suggestions}`, suggestions from real cached non-abstained rows); Dockerfile (CPU-torch-first,
+pre-download bge-small, port 7860); `.dockerignore`; `services/api/README.md` HF frontmatter
+(sdk:docker, app_port:7860); 8 offline gate tests. **pytest 50 passed + 5 skipped; single alembic head
+0010.** Not committed.
+**Verified (Sally, real files):** Read ask.py gate + rate_limit.py. Cache hit returns BEFORE the gate
+(free/unlimited); `over_cap` checked before any LLM call (global ≥18 first, then per-IP ≥3); the
+try/except is narrow around `answer_question` only (the 404s above are NOT masked) → any LLM error →
+demo-mode, NEVER a 500; `record_call` only when `result.retrieved` non-empty (abstains/cache stay free).
+demo-mode payload additive → existing AI panel renders it, no frontend change. ask runs on the app
+engine without a GUC and `ask_rate_limit` has no RLS — correct. Tiny non-issue: a low-concurrency race
+in over_cap/record_call, absorbed by the 18<20 headroom.
+**Next / handoff:** This is the LAST M5 code. James commits → James/Bobby run the ops half (apply 0010
+to Neon admin URL → create HF Space + Vercel → set env vars cross-pointing the two URLs, exact CORS, NO
+admin DATABASE_URL on the Space → deploy → anonymous smoke test). Non-blocking when Gemini's up: pre-seed
+the 3 showcase `answer_cache` rows (so demo-mode has suggestions) + grab the README money-shot.
+Alexander will verify XFF append-vs-overwrite + the 48h-sleep cold start on first deploy.
+**Roadmap:** M5 — all code done; the live deploy (ops) is the final step to a public URL.
+
+---
+
+### 2026-06-22 — Sally (Opus) — M5 Slice 2 plan reviewed + APPROVED (build deferred to next session)
+**Prompted to:** Review Alexander's Slice-2 deploy plan; James low on usage, so lock the plan now and
+build next session.
+**Did:** Reviewed — excellent plan; endorsed and locked all 4 decisions. **Approved design:**
+- Rate limit on the cache-MISS path ONLY (cache hits stay free/unlimited → the 3 showcase Qs always
+  render). New `ask_rate_limit` table (migration 0010: ip_hash, day, count, PK(ip_hash,day), upsert ON
+  CONFLICT, NO RLS — like answer_cache). TWO counters: per-IP (`IP_CAP=3/day`, ip = sha256(XFF[0] or
+  client.host)) + a **GLOBAL soft-cap (`GLOBAL_CAP=18/day`)** — the global cap is the real protection
+  since Gemini's ~20/day is ONE shared key; 18<20 makes the switch to demo-mode deterministic before
+  Gemini 429s. Count only on a real Gemini call (result.retrieved non-empty). On cap OR any LLM error
+  → friendly demo-mode payload, NEVER a 500.
+- demo-mode payload additive (`{demo_mode:true, suggestions:[...]}`); backend-only this slice (message
+  renders in the existing AI panel; clickable showcase chips deferred to the presentable pass).
+- Dockerfile (services/api only): CPU-torch-first → requirements → pre-download bge-small at build (no
+  slow first request) → uvicorn on **port 7860**; HF Space README YAML (`sdk:docker`, `app_port:7860`).
+- Prod env (by name; least-privilege — NO admin DATABASE_URL on the Space): APP_DATABASE_URL (Neon
+  pooled mosaic_app), AUTH_SECRET_KEY (rotated), GEMINI_API_KEY, CORS_ORIGINS=<exact Vercel origin>,
+  AUTH_COOKIE_SAMESITE=none, AUTH_COOKIE_SECURE=true, LLM_*, EMBEDDING_MODEL. Vercel:
+  NEXT_PUBLIC_API_URL=<Space URL>. Apply 0010 to Neon (admin URL) before deploy.
+**Decisions locked:** IP 3 / global 18 + sha256 ✓; pre-download model ✓; demo-mode backend-only ✓; HF
+unknowns (XFF append-vs-overwrite, Space 48h-sleep cold start, build context) verified on first deploy
+— fine. **Verified:** plan only; /ask flow analysis matches reality (cache hit short-circuits before any
+LLM call; ask runs on the app engine with no GUC; ask_rate_limit correctly needs no RLS).
+**Next / handoff (NEXT SESSION, full usage):** James drops the "build Slice 2" go (handed) → Alexander
+builds 0010 + the gate in ask.py (+ app/rate_limit.py) + Dockerfile + Space frontmatter + a small
+offline gate test, backend-only → James commits → James/Bobby apply 0010 to Neon, provision HF Space +
+Vercel, set env vars (cross-pointing the two URLs), deploy, anonymous smoke test. Deliberately deferred
+so build+deploy run in one clean stretch (don't half-finish a deploy).
+**Roadmap:** M5 — Slice-2 plan approved; build + deploy is the final step to a live URL.
+
+---
+
+### 2026-06-22 — Sally (Opus) — ★ M5 Slice 1 COMPLETE (hosted DB live on Neon)
+**Prompted to:** Log Slice-1 ops completion (Bobby session) + hand over Slice 2.
+**Did (Bobby + James):** Neon Postgres provisioned (free, US-East). Full chain **0001→0009 ran clean**
+(pgvector, schema, `mosaic_app` role with a strong env-driven password, all RLS policies). **RLS gate
+PASSED on Neon's pooled endpoint** (cross-user isolation confirmed — the pooler/prepared-statement
+contingency did NOT fire). Corpus seeded: **10 companies, 40 filings, 4,770 embedded chunks** in Neon.
+The env-driven password fix is committed.
+**Pending (non-blocking):** showcase `answer_cache` pre-seed (the 3 Q&As) skipped — Gemini was down;
+retry when it cooperates. The app works without it (first live visitor just hits Gemini directly); it's
+only a warm-up so the demo always renders at quota=0.
+**Secrets:** `MOSAIC_APP_PASSWORD` + the pooled `APP_DATABASE_URL` are held by James (password manager)
+— NOT committed and NOT in these docs; they go into the HF Space env vars during Slice 2 only.
+**Next / handoff:** Slice 2 (final) = per-IP rate limit + demo-mode + the actual Vercel/HF Spaces
+deploy. Sally handed Alexander a PLAN-FIRST Slice-2 prompt (deploy is the most uncertain work, so plan
+before build). Then James/Bobby provision HF Space + Vercel and set prod env vars (incl.
+AUTH_COOKIE_SAMESITE=none, AUTH_COOKIE_SECURE=true, exact-origin CORS, the saved pooled APP_DATABASE_URL
+— never the admin DATABASE_URL), apply the new 0010 migration to Neon, deploy, smoke-test anonymously.
+**Roadmap:** M5 — hosted DB done + seeded + RLS-verified on Neon; the live deploy is the last step.
+
+---
+
 ### 2026-06-22 — Sally (Opus) — M5 Slice-1 ops snag: Neon rejects weak mosaic_app password → env-driven fix
 **Prompted to:** Triage Bobby's escalation (Neon password policy blocking migration 0008) + prompt the fix.
 **Did:** Bobby (good catch) hit Neon's control-plane password-complexity policy — migration 0008's

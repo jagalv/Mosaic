@@ -10,13 +10,17 @@ by RLS (FORCED on the user-owned tables), the same model Supabase uses. ALTER
 DEFAULT PRIVILEGES covers future tables (e.g. M4c `notes`) automatically, since
 migrations run as `mosaic`.
 
-Runs as the admin role `mosaic`. The dev password matches the mosaic/mosaic dev
-convention — rotate it (and APP_DATABASE_URL) for any real deployment.
+Runs as the admin role `mosaic`. The role's password is read from the env var
+MOSAIC_APP_PASSWORD (default "mosaic_app" for local docker, which has no
+complexity policy). A hosted DB (e.g. Neon) rejects a weak literal at the
+control-plane level, so set a STRONG MOSAIC_APP_PASSWORD there — and embed the
+SAME value in APP_DATABASE_URL. Rotate it for any real deployment.
 
 Revision ID: 0008
 Revises: 0007
 Create Date: 2026-06-19
 """
+import os
 from typing import Sequence, Union
 
 from alembic import op
@@ -29,13 +33,18 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Role DDL can't bind parameters, so build the password literal ourselves.
+    # Escape single quotes by doubling them (standard SQL string-literal escaping)
+    # so a value with a quote can't break the statement or inject DDL.
+    password = os.environ.get("MOSAIC_APP_PASSWORD", "mosaic_app")
+    password_literal = "'" + password.replace("'", "''") + "'"
     op.execute(
-        """
+        f"""
         DO $$
         BEGIN
           IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mosaic_app') THEN
             CREATE ROLE mosaic_app LOGIN NOSUPERUSER NOBYPASSRLS
-              PASSWORD 'mosaic_app';
+              PASSWORD {password_literal};
           END IF;
         END
         $$;

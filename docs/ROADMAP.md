@@ -77,14 +77,15 @@ scale, and genuinely useful for real research.**
 Turn the finished build into a portfolio piece people can see and click. This is mostly packaging
 and ops, not new engineering, and it unlocks the career goal immediately.
 
-- [ ] `git push` M4 to GitHub; confirm `main` is clean and current (verify `git status` in a real
-      terminal — the sandbox git view lags).
+- [x] `git push` M4 to GitHub; `main` clean + current (done 2026-06-22).
 - [ ] Set a real `AUTH_SECRET_KEY` (and rotate the `mosaic_app` password) for anything non-local.
-- [ ] **Make the repo public.**
-- [ ] README: a short "what this is" + **screenshots + a ~30-second GIF** of a cited, deep-linked
-      answer (the money shot) and the workspace.
-- [ ] Write up 2–3 `DECISIONS`-style highlights in the README (the RLS superuser-bypass catch, the
-      numbers guard, RRF retrieval) — they signal senior judgment to a technical reader.
+      *(Real local AUTH_SECRET_KEY already set; rotation is for the hosted demo.)*
+- [x] **Make the repo public** (github.com/jagalv/mosaic, 2026-06-22).
+- [~] README: short "what this is" + screenshots + highlights — *done EXCEPT the AI-answer
+      money-shot (Gemini was down) and an optional ~30s GIF. Grab the cited-answer shot when Gemini
+      cooperates.*
+- [x] Write up 2–3 `DECISIONS`-style highlights in the README (RLS superuser-bypass catch, numbers
+      guard, RRF retrieval) (done 2026-06-22).
 - [ ] **Live $0 demo:** deploy web (Vercel free) + API + Postgres (Neon/Supabase free tier), seeded
       with the current corpus. Set `AUTH_COOKIE_SECURE=true` behind HTTPS; lock CORS to the real
       origin.

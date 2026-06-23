@@ -23,6 +23,80 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-22 — Sally (Opus) — M5 Slice-1 ops snag: Neon rejects weak mosaic_app password → env-driven fix
+**Prompted to:** Triage Bobby's escalation (Neon password policy blocking migration 0008) + prompt the fix.
+**Did:** Bobby (good catch) hit Neon's control-plane password-complexity policy — migration 0008's
+`CREATE ROLE mosaic_app ... PASSWORD 'mosaic_app'` is rejected as too weak, stalling the chain on the
+fresh Neon DB (local dev is unaffected; local Postgres has no such policy). A follow-up migration can't
+fix it (the failure is INSIDE 0008's CREATE), so 0008 itself must change. **Lead decision:** make the
+mosaic_app password **env-driven** — `MOSAIC_APP_PASSWORD` (default `mosaic_app` for local, a strong
+value for hosted) — so local clone-and-run is unchanged AND Neon/prod get a strong, uncommitted password;
+APP_DATABASE_URL embeds the same value. Prompted Alexander (direct fix): patch 0008 to read the env var
+(safely-escaped DDL interpolation, role flags preserved), document it, and hand James recovery commands
+for the stuck fresh Neon DB.
+**Verified (Sally, real file):** Read the patched 0008 — password is env-driven
+(`os.environ.get("MOSAIC_APP_PASSWORD","mosaic_app")`), interpolated as a properly single-quote-escaped
+SQL literal (injection-safe: `x'; DROP…` → inert `'x''; DROP…'`); LOGIN NOSUPERUSER NOBYPASSRLS +
+IF NOT EXISTS + grants + downgrade all preserved; `pytest` 42+5 (role DDL never runs offline). Tiny
+caveat (no action — recovery already avoids it): keep `$` out of the password, since a `$$` could clash
+with the DO-block dollar-quote; the recommended `secrets.token_urlsafe` value is `$`-free.
+**Next / handoff:** James commits the patch, then runs the Neon recovery (Alexander's exact commands:
+pick a strong url-safe pw → `$env:MOSAIC_APP_PASSWORD` + Neon DIRECT `DATABASE_URL` → confirm `alembic
+current`=0007 → DROP ROLE mosaic_app (or clean-reset) → `alembic upgrade head` → build pooled
+`APP_DATABASE_URL` with the same pw) and resumes the RLS gate + seed with Bobby. Report the upgrade
+result → Slice 2.
+**Roadmap:** M5 Slice 1 — migration fix verified; resuming the Neon gate + seed.
+
+---
+
+### 2026-06-22 — Sally (Opus) — M5 deploy Slice 1 code verified + stack decision logged
+**Prompted to:** Review Alexander's deploy plan + Slice-1 code; log the stack decision.
+**Did (Alexander, Slice 1 code):** New `auth_cookie_samesite` setting (config.py, default `lax`), wired
+through auth.py set+clear; `.env.example` gained an M5 production-deploy block (HF Spaces / Vercel /
+local-seed vars by name, incl. the least-privilege "no admin DATABASE_URL on the API host" note).
+pytest 42 passed + 5 skipped (RLS skips locally — run in the Neon gate); `next build` unaffected (no
+web files). Not committed.
+**Verified (Sally):** Read the deploy plan (excellent — HF Spaces keeps torch so the trust spine is
+untouched; Neon's non-superuser+CREATEROLE admin runs the RLS chain as-is; admin creds kept off the
+public API host; PgBouncer txn-pooling compatible with the SET LOCAL GUC). Grep-confirmed both the set
+AND clear cookie paths use `auth_cookie_samesite` (logout clears a None;Secure cookie correctly);
+hardcoded constant gone. Logged the deploy-stack DECISIONS entry (2026-06-22).
+**Showcase Q&As picked for the step-4 answer_cache pre-seed** (all known-good): (1) AAPL net sales —
+"What were Apple's total net sales in the most recent fiscal year?" (acc 0000320193-25-000079) — the
+numbers money-shot, verified guard-clean in M3; (2) AAPL components risk — "Does Apple rely on single
+or limited sources for key components?" (same acc) — golden-validated; (3) MSFT — "What does
+Microsoft's Intelligent Cloud segment include?" (acc 0000950170-25-100235) — golden-validated, adds a
+2nd company. Confirm each returns cached:false then true (and net-sales guard-clean) when seeding;
+swap if any looks weak.
+**Next / handoff:** James (with Bobby) runs the ops half against Neon — provision → `alembic upgrade
+head` (Neon DIRECT admin) → `test_rls.py` against Neon POOLED app endpoint (watch the psycopg
+prepared-stmt / PgBouncer contingency → Alexander adds `prepare_threshold=None` if it fires) → seed via
+local pipeline → pre-seed the 3 showcase cache rows. Then Slice 2 (rate-limit + demo-mode + HF/Vercel
+deploy). James commits the Slice-1 code.
+**Roadmap:** M5 live-deploy in progress — Slice 1 code done; hosted DB gate + Slice 2 next.
+
+---
+
+### 2026-06-22 — Sally (Opus) — M5 packaging done (Bobby session, logged by Sally)
+**Prompted to:** Log Bobby's M5 packaging work + scope the live-deploy slice for Alexander.
+**Did (Bobby + James):** Committed + pushed M4; **the repo is now PUBLIC** (github.com/jagalv/mosaic);
+README rewritten with screenshots, a personal voice, and engineering highlights (DB-enforced RLS +
+the superuser-bypass catch, the numbers guard, RRF retrieval). Everything on GitHub clean + current.
+**Open (M5 packaging):** the README's **AI-answer money-shot is still missing** — Gemini was down
+today. TODO when the app's running + Gemini cooperates: ask AAPL's 10-K a question, get the cited
+answer with footnotes, screenshot it, add it as the 3rd README image. A short GIF is still a
+nice-to-have. (The deploy's planned "demo mode" answer cache will make such answers reliably
+available regardless of the Gemini daily quota — so this gets easier after deploy.)
+**Next / handoff:** M5's remaining piece = the **live $0 deploy**, an engineering slice. Sally handed
+Alexander a PLAN-ONLY deploy-scoping prompt (API host given the torch/bge memory footprint; hosted
+Postgres + the mosaic_app role + RLS feasibility on a managed DB; cross-SITE cookies over HTTPS =
+SameSite=None;Secure; a Gemini rate-limit + demo-mode cache; corpus seeding). Review the plan with
+James before any build.
+**Roadmap:** M5 — push ✓, public ✓, README highlights ✓ (AI money-shot + GIF still pending); live
+deploy is next, plan-gated.
+
+---
+
 ### 2026-06-22 — Sally (Opus) — reviewed + endorsed Vera's Phase-2 reset
 **Prompted to:** Review Vera's end-of-Phase-1 audit + new roadmap as lead, and act on it.
 **Did:** Read the rewritten ROADMAP.md end-to-end (not just Vera's summary) — coherent, goal-aligned,

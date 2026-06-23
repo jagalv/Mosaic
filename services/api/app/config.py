@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     # request runs as, so Postgres RLS is actually enforced (a superuser bypasses
     # RLS). REQUIRED for the API; there is deliberately NO fallback to
     # database_url — falling back would re-open the RLS hole.
+    #
+    # The `mosaic_app` password is NOT read here at runtime — migration 0008
+    # creates the role with the password from env `MOSAIC_APP_PASSWORD` (default
+    # "mosaic_app" for local docker, which has no complexity policy). A hosted DB
+    # (Neon) rejects a weak literal, so set a STRONG MOSAIC_APP_PASSWORD there and
+    # embed that SAME value here in app_database_url.
     app_database_url: str = ""
 
     # Browser origins allowed to call the API. Comma-separated in the env var.
@@ -61,6 +67,12 @@ class Settings(BaseSettings):
     # (set true behind HTTPS in prod).
     auth_secret_key: str = "dev-insecure-change-me"
     auth_cookie_secure: bool = False
+    # SameSite policy for the session cookie. `lax` works in local dev where web
+    # and API share a site (localhost). In a cross-site prod deploy (web on
+    # *.vercel.app, API on *.hf.space) the browser drops a Lax cookie on the
+    # credentialed fetch, silently breaking auth — set `none` there (which the
+    # browser requires be paired with Secure, i.e. AUTH_COOKIE_SECURE=true).
+    auth_cookie_samesite: str = "lax"
 
     @property
     def cors_origins_list(self) -> list[str]:

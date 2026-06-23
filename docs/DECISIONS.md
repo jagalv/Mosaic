@@ -5,6 +5,34 @@ genuine decision — not a changelog.
 
 ---
 
+## 2026-06-22 — M5 deploy stack: Vercel + HF Spaces (keep torch) + Neon; cross-site cookies SameSite=None
+
+**Decision (Sally, on James's approval):** The live $0 demo runs on **Vercel** (Next.js web) +
+**Hugging Face Spaces** (FastAPI API; free CPU Space has ~16GB RAM, so it holds torch + bge-small and
+the retrieval path is UNCHANGED — no embedding swap) + **Neon** (Postgres + pgvector). Cross-site
+cookies: a new `AUTH_COOKIE_SAMESITE` setting (default `lax`), set to **`None` + `Secure`** in prod
+with exact-origin CORS (browsers reject `*` with credentials). **Least-privilege:** the admin
+`DATABASE_URL` is NEVER set on the public API host — the API uses only `mosaic_app` /
+`APP_DATABASE_URL`. Gemini on the public endpoint is protected by cache-first + a per-IP/day rate limit
+on cache-misses + **pre-seeded showcase `answer_cache` rows ("demo mode")** so the cited-answer demo
+always renders at $0. Neon wiring: **direct** endpoint for migrations/admin/seeding, **pooled**
+(PgBouncer txn-mode) endpoint for the API — compatible because the RLS GUC uses `SET LOCAL`
+(transaction-scoped).
+
+**Why:** Holds the $0 constraint AND leaves the trust spine untouched (keeping torch on a big-RAM free
+host beats swapping the load-bearing query embedder). Neon's admin role is **non-superuser** with
+`CREATEROLE` — so migration 0008's `CREATE ROLE mosaic_app` + the whole RLS chain run as-is, and the
+"no superuser" property actually *strengthens* RLS (no bypass). **Considered + rejected/deferred:**
+Supabase (its `postgres` superuser muddies our hand-rolled RLS); a fastembed/ONNX query-embedder swap
+to fit a 512MB host (deferred — would re-validate retrieval; acceptance gate = cosine ≥0.99 vs torch
+vectors + recall@8 still 1.00); a custom domain for same-site `Lax` cookies (~$10/yr, not pure $0).
+
+**Amendment (2026-06-22):** the `mosaic_app` role password is **env-driven** (`MOSAIC_APP_PASSWORD`,
+default `mosaic_app` for local, a strong value for hosted) — Neon enforces a control-plane
+password-complexity policy that rejected the hardcoded weak literal in migration 0008. 0008 now reads
+the env var; `APP_DATABASE_URL` embeds the same value. Keeps local clone-and-run unchanged while letting
+hosted DBs use a strong, uncommitted password.
+
 ## 2026-06-19 — M4 auth/RLS stack: local-first, DB-enforced Postgres RLS (no auth SaaS)
 
 **Decision (Sally, on James's delegation):** Milestone 4 auth + row-level security is built

@@ -1,9 +1,9 @@
 """Auth: password hashing, JWT session cookies, and the current-user dependency.
 
-Milestone 4a. A session is a signed JWT (HS256) carried in an httpOnly,
-SameSite=Lax cookie — never localStorage. The `Secure` flag is gated on
-AUTH_COOKIE_SECURE so login works over http://localhost in dev and is hardened
-behind HTTPS in prod. The token carries the user id in `sub` and a 7-day `exp`;
+Milestone 4a. A session is a signed JWT (HS256) carried in an httpOnly cookie — never
+localStorage. The `Secure` flag is gated on AUTH_COOKIE_SECURE and the SameSite
+policy on AUTH_COOKIE_SAMESITE, so login works over http://localhost in dev
+(Lax) and over a cross-site HTTPS prod deploy (None+Secure). The token carries the user id in `sub` and a 7-day `exp`;
 decode verifies signature AND expiry.
 
 `get_current_user` is the seam the RLS slice (M4b) composes with: it resolves the
@@ -26,7 +26,6 @@ from app.models import User
 
 COOKIE_NAME = "mosaic_session"
 COOKIE_PATH = "/"
-COOKIE_SAMESITE = "lax"
 TOKEN_TTL = timedelta(days=7)
 _JWT_ALG = "HS256"
 
@@ -70,7 +69,7 @@ def set_session_cookie(response: Response, user_id: int) -> None:
         # Max-Age aligned to the token TTL so cookie and token expire together.
         max_age=int(TOKEN_TTL.total_seconds()),
         httponly=True,
-        samesite=COOKIE_SAMESITE,
+        samesite=get_settings().auth_cookie_samesite,
         secure=get_settings().auth_cookie_secure,
         path=COOKIE_PATH,
     )
@@ -81,7 +80,7 @@ def clear_session_cookie(response: Response) -> None:
     response.delete_cookie(
         key=COOKIE_NAME,
         path=COOKIE_PATH,
-        samesite=COOKIE_SAMESITE,
+        samesite=get_settings().auth_cookie_samesite,
         secure=get_settings().auth_cookie_secure,
         httponly=True,
     )

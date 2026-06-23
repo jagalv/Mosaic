@@ -4,6 +4,14 @@
 
 > *Mosaic theory* is how analysts build a legitimate investment view by assembling many individually-public pieces of information. That's what this product does.
 
+![Company page — Apple Inc. with 5-year SEC financials](docs/screenshots/company-dash.png)
+*Company page: multi-year financials from SEC EDGAR, rendered directly from Postgres.*
+
+![Research workspace — dashboard with watchlist and notes](docs/screenshots/general-dash.png)
+*Research workspace: watchlists and notes persist across sessions, protected by DB-enforced RLS.*
+
+> **Evaluation (honest baseline):** faithfulness 13/13 · recall@8 = 1.00 over a 13-question golden set across 2 companies. M6 will widen this to ≥30 questions / ≥5 companies.
+
 ---
 
 ## Why it exists
@@ -15,6 +23,12 @@ Mosaic compresses hours of filing-reading into minutes **without sacrificing tru
 ## The killer feature: "Ask this filing"
 
 Type a ticker, land on a company page, and ask natural-language questions answered *only* from that company's SEC filings and transcripts — with inline citations linking to the exact paragraph. Example: *"How did their risk factors change between the 2023 and 2024 10-K?"*
+
+## Engineering highlights
+
+- **DB-enforced Postgres RLS.** Watchlists and notes are protected by real Postgres Row-Level Security — not application-layer filtering. The API connects as a non-superuser `mosaic_app` role so RLS is always enforced. A superuser-bypass that silently skips RLS was caught and closed during the security test suite (migration 0008).
+- **Runtime numbers guard.** Every AI answer is cross-checked against the retrieved source text: any figure that doesn't appear verbatim in the cited passages is flagged before it reaches the reader. No fabricated numbers slip through silently (`app/rag/guard.py`).
+- **RRF hybrid retrieval.** "Ask this filing" fuses pgvector semantic search with Postgres full-text search using Reciprocal Rank Fusion, section-filtered per company and filing. Recall@8 = 1.00 on the golden set.
 
 ## What makes it different
 
@@ -32,7 +46,7 @@ Type a ticker, land on a company page, and ask natural-language questions answer
 | AI/Data service | Python + FastAPI | SEC ingestion, XBRL parsing, embedding, RAG orchestration |
 | Database | Postgres + pgvector | Relational + vector + full-text in one DB — deliberately not over-engineered |
 | Object storage | Cloudflare R2 / Supabase Storage | Raw filings + generated artifacts |
-| Auth | Supabase Auth / Clerk | JWT sessions + row-level security |
+| Auth | Custom — argon2 + JWT httpOnly cookies | Sessions + DB-enforced Postgres RLS (non-superuser role) |
 | LLM | Gemini Flash / Groq (cheap-first, swappable) | Most work is summarize/extract/answer — small models suffice |
 | Embeddings | Local `bge-small` / `e5-small` | Keeps embedding at $0, no rate limits during bulk ingestion |
 | Hosting | Vercel + Supabase/Neon + Fly.io/Render | All free tiers; target operating cost ~$0/month |
@@ -130,7 +144,7 @@ no code changes needed.
 
 ## Status
 
-🚧 **Phase 1 — Foundation & the Wedge.** See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the live milestone tracker.
+**Phase 1 complete (M0–M4).** The wedge works end-to-end: grounded, cited Q&A with a runtime numbers guard, DB-enforced Postgres RLS, argon2 + JWT auth, watchlists, and notes with a cross-user security test. Active milestone: **M5 — Ship & Showcase** (live demo deploy). See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Disclaimer
 

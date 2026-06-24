@@ -63,6 +63,38 @@ def _json_number(value) -> float | int:
     return int(f) if f.is_integer() else f
 
 
+@router.get("/companies")
+def list_companies(db: Session = Depends(get_session)) -> list[dict]:
+    """Public browse: every company plus a lightweight latest-revenue metric, in
+    ONE call (the grid card shows name/ticker/sector + Revenue + YoY delta). Two
+    queries total, no per-company fan-out."""
+    companies = db.scalars(select(Company).order_by(Company.ticker)).all()
+
+    # Latest two FY Revenue values per company → the card's value + delta.
+    rev_rows = db.execute(
+        select(Financial.cik, Financial.fiscal_year, Financial.value).where(
+            Financial.line_item == "Revenue", Financial.fiscal_period == "FY"
+        )
+    ).all()
+    by_cik: dict[int, list[tuple[int, object]]] = {}
+    for cik, year, value in rev_rows:
+        by_cik.setdefault(cik, []).append((year, value))
+
+    out: list[dict] = []
+    for c in companies:
+        years = sorted(by_cik.get(c.cik, []), key=lambda yv: yv[0], reverse=True)
+        out.append(
+            {
+                "ticker": c.ticker,
+                "name": c.name,
+                "sector": c.sector,
+                "revenue": _json_number(years[0][1]) if years else None,
+                "revenue_prev": _json_number(years[1][1]) if len(years) >= 2 else None,
+            }
+        )
+    return out
+
+
 @router.get("/company/{ticker}")
 def get_company(ticker: str, db: Session = Depends(get_session)) -> dict:
     company = db.scalar(select(Company).where(Company.ticker == ticker.upper()))

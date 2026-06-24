@@ -54,6 +54,43 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-24 — Sally (Opus) — M6a grid fix built + verified (dynamic /companies); deploy pending
+**Prompted to:** Make the company grid dynamic (it hardcoded 10 while Neon has 20).
+**Did (Alexander):** Public `GET /companies` (2 queries: list + lightweight latest/prior-FY revenue,
+ticker-ordered) in company.py; `CompanySummary` + `fetchCompanies()` in lib/api.ts; rewrote
+company-grid.tsx to fetch dynamically (dropped the hardcoded STARTER_TICKERS fan-out — kept it in
+nav-config for the landing page); fixed the stale "10 companies" dashboard copy; offline shape test.
+**Verified (Sally):** Alexander ran a LIVE local check — `GET /companies` against the seeded local DB
+returned all 20 ticker-ordered with correct revenue. pytest 60 passed (new test + RLS green, local PG
+up); `next build` clean, /companies route present. Light-touch verify (browse code, tested + live-checked).
+**Next / handoff:** James deploys — commit+push (Vercel redeploys web) + subtree-push the API to the HF
+Space (so /companies exists in prod) → confirm the LIVE grid lists 20 (reload if web beats the Space).
+That closes M6a → M6b (eval expansion). M5 still: MSFT showcase seed (0000950170-25-100235) on quota reset.
+**Roadmap:** M6a — grid fix done; "live grid shows 20" after deploy closes M6a fully.
+
+---
+
+### 2026-06-24 — Sally (Opus) — M6a corpus LIVE (20 companies on Neon); frontend grid fix needed
+**Prompted to:** Log the M6a corpus run + route the remaining frontend gap.
+**Did (Bobby + James, ops):** Ran the batch (BATCH_20, --limit-10k 4) and pushed to Neon. **Result: 20
+companies, 17,150 embedded chunks, 304 MB on Neon.** The 3 M6a modules (batch.py, qa.py, sp100.py) are
+committed. API serves all 20 (JNJ etc. load by URL).
+**Storage note (future scaling):** 304 MB is under Neon's ~0.5GB free cap but now ~60% full — meaningful
+further Neon growth (more companies or depth) will need a trim or a paid tier. Local is unbounded.
+**Open (frontend gap):** the dashboard/companies grid still shows only 10 — `apps/web/.../company-grid.tsx`
+HARDCODES a starter ticker list instead of asking the API. Backend is fine; purely a frontend wiring gap.
+Fix = add a public `GET /companies` list endpoint + wire the grid to it dynamically. Prompted Alexander
+(small full-stack slice).
+**Verified (Sally):** Not independent — relying on Bobby's report (JNJ loads ⇒ Neon has all 20). The
+grid-shows-10 is a confirmed hardcoded list.
+**Next / handoff:** Alexander builds GET /companies + dynamic grid → James commits → redeploy web (Vercel)
++ subtree-push the API to the HF Space → confirm the live grid lists 20. Then M6a is fully done; M6b
+(eval expansion) is next. M5 still needs the MSFT showcase seed (filing 0000950170-25-100235) when the
+Gemini quota resets.
+**Roadmap:** M6a — corpus done (20×4yr on Neon); the frontend grid fix is the last M6a item.
+
+---
+
 ### 2026-06-24 — Sally (Opus) — M6a tooling built + verified (corpus-expansion batch); run pending
 **Prompted to:** Build M6a corpus-expansion tooling; James runs the ingestion.
 **Did (Alexander):** 3 modules in app/ingest/ — `sp100.py` (committed static S&P-100 list + curated

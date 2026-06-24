@@ -4,32 +4,11 @@ import { ArrowUpRight } from "lucide-react";
 import { Chip } from "@/components/primitives/chip";
 import { Delta } from "@/components/primitives/metric";
 import { EmptyState } from "@/components/primitives/states";
-import { STARTER_TICKERS } from "@/components/shell/nav-config";
-import { fetchCompany, type CompanyData } from "@/lib/api";
+import { fetchCompanies } from "@/lib/api";
 import { fmtCompactUSD, pctChange } from "@/lib/format";
 
-function latestRevenue(c: CompanyData): { value?: number; delta: number | null } {
-  const rev = c.statements.income.find((r) => r.line_item === "Revenue");
-  const years = [...c.years].sort((a, b) => b - a);
-  const curr = rev?.values[String(years[0])];
-  const prev = rev?.values[String(years[1])];
-  return { value: curr, delta: pctChange(curr, prev) };
-}
-
-async function getCompanies(): Promise<CompanyData[]> {
-  const results = await Promise.allSettled(
-    STARTER_TICKERS.map((t) => fetchCompany(t)),
-  );
-  return results
-    .filter(
-      (r): r is PromiseFulfilledResult<CompanyData> =>
-        r.status === "fulfilled" && r.value != null,
-    )
-    .map((r) => r.value);
-}
-
 export async function CompanyGrid() {
-  const companies = await getCompanies();
+  const companies = await fetchCompanies();
 
   if (companies.length === 0) {
     return (
@@ -43,7 +22,8 @@ export async function CompanyGrid() {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {companies.map((c) => {
-        const { value, delta } = latestRevenue(c);
+        const value = c.revenue ?? undefined;
+        const delta = pctChange(c.revenue ?? undefined, c.revenue_prev ?? undefined);
         return (
           <Link
             key={c.ticker}

@@ -82,6 +82,23 @@ export interface FilingData {
   sections: FilingSection[];
 }
 
+/** One company as listed on the browse grid: identity + a lightweight latest
+ * Revenue metric (current + prior FY) so the grid needs only one API call. */
+export interface CompanySummary {
+  ticker: string;
+  name: string;
+  sector: string | null;
+  revenue: number | null;
+  revenue_prev: number | null;
+}
+
+/** Fetch every ingested company with its latest-revenue metric (one call). */
+export async function fetchCompanies(): Promise<CompanySummary[]> {
+  const res = await fetch(`${API_URL}/companies`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`API ${res.status} for /companies`);
+  return res.json();
+}
+
 /** Fetch a company's pivoted financials + filing list. Returns null on 404. */
 export async function fetchCompany(ticker: string): Promise<CompanyData | null> {
   const res = await fetch(`${API_URL}/company/${ticker}`, { cache: "no-store" });

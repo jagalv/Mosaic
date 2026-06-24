@@ -20,7 +20,7 @@ export default function DashboardPage() {
       <PageHeader
         eyebrow="Overview"
         title="Dashboard"
-        description="Your starter universe — real SEC financials for 10 companies. Open one to read its filings and ask grounded questions."
+        description="Your research universe — real SEC financials for every ingested company. Open one to read its filings and ask grounded questions."
       />
       <div className="mt-6">
         <Suspense fallback={<GridSkeleton />}>

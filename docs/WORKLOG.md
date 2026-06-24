@@ -23,6 +23,22 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-22 — Sally (Opus) — M5 deploy fix verified (REPO_ROOT depth guard)
+**Prompted to:** Fix the HF Space startup crash (config.py REPO_ROOT) + verify.
+**Did (Alexander):** config.py `REPO_ROOT` now guards the parents index
+(`_parents[3] if len(_parents) > 3 else _parents[-1]`) — it was crashing the Space at import (code at
+/code/app → parents[3] IndexError). Local value is byte-identical (still the repo root, so `.env` and
+edgar's `CACHE_DIR` resolve); the shallow/deployed case returns a valid Path (a missing env_file is
+fine — pydantic falls through to the OS env vars HF provides). pytest 50 passed / 5 skipped.
+**Verified (Sally, real file):** Read config.py — guard + explanatory comment present; local behavior
+unchanged; REPO_ROOT always a valid Path so edgar.py's second use can't break.
+**Next / handoff:** James commits + pushes → the Space rebuilds (should clear the startup crash) →
+Bobby re-runs the anonymous smoke test (Step 7 of the deploy walk-through). First-deploy path friction,
+now fixed.
+**Roadmap:** M5 — live deploy in progress; one path-assumption bug fixed.
+
+---
+
 ### 2026-06-22 — Sally (Opus) — M5 Slice 2 build VERIFIED (rate-limit + demo-mode); deploy = James/Bobby
 **Prompted to:** Verify Alexander's Slice-2 build; log it.
 **Did (Alexander, Slice 2 code):** migration 0010 `ask_rate_limit` (ip_hash/day/count, PK, no RLS);

@@ -10,8 +10,13 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# config.py -> app -> api -> services -> <repo root>
-REPO_ROOT = Path(__file__).resolve().parents[3]
+# config.py -> app -> api -> services -> <repo root>. Guard the depth: a deployed
+# image (e.g. HF Spaces, code at /code/app/config.py) is shallower than 3 levels,
+# where parents[3] would IndexError at import. Fall back to the topmost parent so
+# REPO_ROOT is always a valid Path — env_file just won't exist there, which
+# pydantic-settings handles by reading the platform's OS env vars instead.
+_parents = Path(__file__).resolve().parents
+REPO_ROOT = _parents[3] if len(_parents) > 3 else _parents[-1]
 
 
 class Settings(BaseSettings):

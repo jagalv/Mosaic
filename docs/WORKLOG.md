@@ -58,6 +58,28 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-22 — Sally (Opus) — M5 deploy: /ask demo-mode root cause = Gemini 503; retry fix verified
+**Prompted to:** Diagnose + fix the live /ask always-returns-demo-mode blocker.
+**Did:** Added diagnostic logging to ask.py's except (`logging.exception` + `print(traceback, flush=True)`)
+→ the HF Container log revealed the real cause: `google.genai.errors.ServerError: 503 UNAVAILABLE`
+("high demand") — NOT an SDK incompatibility or a code bug. gemini.py only retried 429, so a 503 raised
+→ caught → demo-mode (working as designed, just not riding out the blip). Alexander fixed gemini.py:
+503/UNAVAILABLE now retryable on a SEPARATE short budget (`_MAX_503_RETRIES=2`, `_BACKOFF_503_SECONDS=2.0`
+→ ~4s cap) so a degraded backend fails over fast; per-minute 429 keeps its 3-retry/server-delay budget;
+per-DAY 429 still fails fast; exhaustion still raises → demo-mode (never a 500). +4 tests
+(test_gemini_retry.py).
+**Verified (Sally, real file):** Read the gemini.py retry loop — bounds correct (503: attempts 0,1 sleep
+then raise at attempt 2 = 2 retries/~4s; 429 unchanged at 3; per-day + non-retryable raise immediately;
+success breaks; no fall-through / infinite loop). pytest **54 passed + 5 skipped**.
+**Next / handoff:** James commits + pushes + re-pushes the subtree → redeploy → hit /ask with a FRESH
+question (transient 503s now ridden out → live cited answer; or demo-mode if the daily quota is genuinely
+spent, now confirmable via the log). **DURABLE fix (the real demo-resilience):** James/Bobby pre-seed the
+3 showcase `answer_cache` rows once a call succeeds — cached answers need ZERO Gemini, so the money-shot
+renders forever regardless of 503/quota. When the showcase Qs return cited answers on the live site → M5 DONE.
+**Roadmap:** M5 — final blocker (Gemini 503) fixed; the live deploy + showcase cache pre-seed are the last steps.
+
+---
+
 ### 2026-06-22 — Sally (Opus) — M5 deploy fix verified (REPO_ROOT depth guard)
 **Prompted to:** Fix the HF Space startup crash (config.py REPO_ROOT) + verify.
 **Did (Alexander):** config.py `REPO_ROOT` now guards the parents index

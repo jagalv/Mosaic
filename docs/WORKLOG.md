@@ -5,6 +5,20 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-24 — Bobby (Sonnet 4.6) — M6a corpus expanded to 20 companies on Neon
+**Prompted to:** Run M6a batch ingest locally then push to Neon; commit new modules.
+**Did:**
+- Ran `python -m app.ingest.batch` locally: 20 tickers, 4 10-Ks each, 20/20 ok, 12,380 new chunks embedded. Total local corpus: 17,150 chunks, 20 companies, 125 10-Ks, all embedded.
+- Ran `python -m app.ingest.qa`: all three QA flags zero (no 0-section 10-Ks, no low-chunk 10-Ks, no low-financials) — cleaner than Sally expected.
+- Pushed corpus to Neon (direct endpoint, `postgresql+psycopg://` driver) — identical counts confirmed. Neon storage: 304 MB (free cap ~500 MB, comfortable).
+- Committed `batch.py`, `qa.py`, `sp100.py` + WORKLOG/ROADMAP (commit 38fca45 + follow-up).
+- Diagnosed why dashboard/companies page still shows 10: `company-grid.tsx` line 21 hardcodes `STARTER_TICKERS` instead of calling a dynamic `/companies` API endpoint. Backend is correct — JNJ loads fine via ticker search.
+**Verified:** JNJ company page loads on live site confirming Neon has all 20. QA flags all zero.
+**Next / handoff:** Alexander needs to fix `company-grid.tsx` — replace `STARTER_TICKERS.map(fetchCompany)` with a single `GET /companies` API call (or equivalent) that returns all DB companies dynamically. Also: MSFT showcase seed (quota reset overnight — ask "What does Microsoft's Intelligent Cloud segment include?" on filing 0000950170-25-100235 first thing next session to close M5).
+**Roadmap:** M6a corpus ingestion done. Frontend grid fix (dynamic company list) is the remaining M6a item.
+
+---
+
 ### 2026-06-24 — Bobby (Sonnet 4.6) — M5 503 fix deployed; 2/3 showcase Qs cached
 **Prompted to:** Redeploy the 503 retry fix to HF Space, verify /ask live, pre-seed 3 showcase cache rows.
 **Did:**

@@ -78,17 +78,18 @@ Turn the finished build into a portfolio piece people can see and click. This is
 and ops, not new engineering, and it unlocks the career goal immediately.
 
 - [x] `git push` M4 to GitHub; `main` clean + current (done 2026-06-22).
-- [ ] Set a real `AUTH_SECRET_KEY` (and rotate the `mosaic_app` password) for anything non-local.
-      *(Real local AUTH_SECRET_KEY already set; rotation is for the hosted demo.)*
-- [x] **Make the repo public** (github.com/jagalv/mosaic, 2026-06-22).
-- [~] README: short "what this is" + screenshots + highlights — *done EXCEPT the AI-answer
-      money-shot (Gemini was down) and an optional ~30s GIF. Grab the cited-answer shot when Gemini
-      cooperates.*
+- [x] Set a real `AUTH_SECRET_KEY` + strong `mosaic_app` password — set on the HF Space + Neon for the
+      hosted demo (2026-06-24).
+- [x] **Make the repo public** (github.com/jagalv/Mosaic, 2026-06-22).
+- [x] README: "what this is" + screenshots + highlights — *done (2026-06-24): the Ask-this-filing
+      money-shots (cited answer + deep-linked source), workspace + company shots, live-demo URL, hosting
+      stack, and the engineering highlights. Optional ~30s GIF still a nice-to-have.*
 - [x] Write up 2–3 `DECISIONS`-style highlights in the README (RLS superuser-bypass catch, numbers
       guard, RRF retrieval) (done 2026-06-22).
-- [ ] **Live $0 demo:** deploy web (Vercel free) + API + Postgres (Neon/Supabase free tier), seeded
-      with the current corpus. Set `AUTH_COOKIE_SECURE=true` behind HTTPS; lock CORS to the real
-      origin.
+- [x] **Live $0 demo SHIPPED** (2026-06-24): Vercel web + HF Space API + Neon, serving live cited
+      answers at mosaic-web-nu.vercel.app; SameSite=None/Secure + exact-origin CORS live; per-IP+global
+      rate limit + demo-mode; Gemini-503 retry. *Last touch: seed the 3rd showcase Q (MSFT Intelligent
+      Cloud) next session when the daily quota resets — 2 of 3 already cached incl. the money-shot.*
 
 **The genuinely hard part:** first real deploy always has friction — cross-origin cookies over
 HTTPS (Secure flag, SameSite, CORS allow-credentials with a specific origin), cold hosted Postgres

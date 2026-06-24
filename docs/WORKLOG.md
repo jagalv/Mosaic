@@ -3,6 +3,23 @@
 Shared memory across AI assistants (Sally, Bobby, Alexander). The three of us don't
 share memory — this file is how we hand off. **Newest entry at the top.**
 
+---
+
+### 2026-06-24 — Bobby (Sonnet 4.6) — M5 503 fix deployed; 2/3 showcase Qs cached
+**Prompted to:** Redeploy the 503 retry fix to HF Space, verify /ask live, pre-seed 3 showcase cache rows.
+**Did:**
+- Confirmed 503 retry fix already committed (6a63b86) and on GitHub before session started.
+- Subtree-split services/api and force-pushed to hf-space remote (1d26d01 → 8cf2d8b); Space rebuilt clean.
+- Verified /ask on live Vercel site (mosaic-web-nu.vercel.app): AAPL FY2025 10-K returned "$416,161 million" with 3 citations — live Gemini call, not demo mode.
+- Pre-seeded 2/3 showcase questions; both confirmed `cached` on re-ask (instant, zero Gemini):
+  - ✅ AAPL 10-K (0000320193-25-000079): "What were Apple's total net sales in the most recent fiscal year?"
+  - ✅ AAPL 10-K (0000320193-25-000079): "Does Apple rely on single or limited sources for key components?"
+  - ⏳ MSFT 10-K (0000950170-25-100235): "What does Microsoft's Intelligent Cloud segment include?" — hit global daily cap (18/day exhausted); needs one call tomorrow.
+- Money-shot screenshots captured: answer panel + deep-link source highlight (two-frame, option B).
+**Verified:** Both AAPL cache hits confirmed live. HF Space Container log clean. /ask live and cited.
+**Next / handoff:** First thing next session: open MSFT 10-K (0000950170-25-100235) on the live site and ask "What does Microsoft's Intelligent Cloud segment include?" — daily quota resets overnight. On success → M5 DONE. Sally to tick M5 complete and update ROADMAP. Also: sticky answer panel (stays visible when clicking a citation) is a small Alexander polish item worth filing.
+**Roadmap:** M5 — one cache seed remaining (MSFT); everything else deployed and working.
+
 ## Rules for every assistant
 - **Read the latest entry at the start of your session.**
 - **Append a new entry at the end of your session — always, without being asked.** A
@@ -20,6 +37,66 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 **Next / handoff:** <what the next assistant should pick up, and any gotchas>
 **Roadmap:** <milestone + which checkboxes you ticked, if any>
 ```
+
+---
+
+### 2026-06-24 — Sally (Opus) — M6a tooling built + verified (corpus-expansion batch); run pending
+**Prompted to:** Build M6a corpus-expansion tooling; James runs the ingestion.
+**Did (Alexander):** 3 modules in app/ingest/ — `sp100.py` (committed static S&P-100 list + curated
+`BATCH_20` = the 10 starters + JNJ PFE WMT PG HD DIS NFLX V BA CAT, all clean single-symbol tickers);
+`batch.py` (orchestrator: runs run→documents→chunk→embed for a ticker set, default BATCH_20 /
+`--limit-10k 4` ≈ 4yr depth; per-ticker try/except + rollback + skip-continue; one consolidated report →
+`data/ingest_reports/`); `qa.py` (read-only survey: 0-section filings, <10-chunk filings, <8-line-item
+companies). Reuses the existing idempotent CLIs (no reimplementation). pytest 54+5 unchanged; report
+rendering verified via the pure `_format_report` (no Postgres in the sandbox).
+**Verified (Sally, real file):** Read batch.py — reuses the existing per-ticker functions; failures
+isolated (rollback + continue); embed is a single scoped pass; writes via admin `SessionLocal` so it
+targets whatever `DATABASE_URL` points at (local then Neon). Sound + fail-safe.
+**Decision (James):** **20 companies × 4 years** (not 30 × 2) — depth powers M7's multi-year diff;
+~195MB fits Neon's ~0.5GB free cap. Caveat: older 10-Ks (3–4yr back) may segment imperfectly → QA flags
+them, accepted (not fixed).
+**Next / handoff:** James (ops): (1) local — `python -m app.ingest.batch` (BATCH_20, --limit-10k 4) →
+`python -m app.ingest.qa` → review report + spot-check JNJ/CAT + an older 10-K; (2) push to Neon
+(DATABASE_URL→Neon DIRECT admin, warm cache → no SEC refetch) → confirm the live demo lists ~20
+companies. Commit the 3 new modules. Then M6b (eval expansion: ≥30 Qs / ≥5–8 cos; recall now,
+faithfulness when Gemini quota allows).
+**Roadmap:** M6a tooling done + verified; the corpus-expansion run is James's ops step.
+
+---
+
+### 2026-06-24 — Sally (Opus) — M5 README finished (money-shots committed)
+**Prompted to:** Add the captured Ask-this-filing money-shots to the README.
+**Did (James + Sally):** James copied the two screenshots into docs/screenshots/ (appl-question.png =
+the cited answer; appl-source.png = the deep-linked, highlighted source) and pushed. Sally updated
+README.md to LEAD with them, plus the live-demo URL, a Hosting row in the stack table (Vercel + HF
+Spaces + Neon), and a "live" Status. The "Make it presentable" / README block is DONE.
+**Next / handoff:** ONLY remaining M5 touch = seed the MSFT "Intelligent Cloud segment" showcase Q
+(one /ask tomorrow once the Gemini daily quota resets) → then M5 is 100%. After that, M6 (corpus + eval
+breadth) is the next build, scoped in bounded slices.
+**Roadmap:** M5 README/presentable ticked done; the MSFT showcase seed is the last open item.
+
+---
+
+### 2026-06-24 — Sally (Opus) — ★ M5 SHIPPED: Mosaic is LIVE & PUBLIC (serving cited answers)
+**Prompted to:** Close out M5 after Bobby's deploy session.
+**Did (close-out, logged by Sally):** The live $0 demo is UP — Vercel web + HF Space API + Neon DB,
+serving real, cited "Ask this filing" answers at mosaic-web-nu.vercel.app. The Gemini-503 retry fix is
+deployed; /ask returns live cited answers. **2 of 3 showcase questions are permanently cached** (AAPL
+total net sales = the money-shot; AAPL single/limited-source components), so the headline demo renders
+at $0 regardless of Gemini's state. Money-shot screenshots captured (answer panel + highlighted source).
+The substance of M5 is DONE — Mosaic is a clickable, public, recruiter-facing product.
+**Verified:** Bobby confirmed live cited answers + the 2 cache hits on the deployed site (his entry
+below). I did NOT independently hit the live URL — James/Bobby to keep an eye on it.
+**Two trivial finish touches (do FIRST next session):** (1) seed the 3rd showcase Q — MSFT "Intelligent
+Cloud segment" — one /ask once the daily Gemini quota resets (one shot caches it forever). (2) drop the
+money-shot screenshots into README.md and push (Bobby has the images).
+**Noted polish (Alexander, non-blocking):** a sticky/pinned answer panel in the filing reader — small
+UI nicety; queue for an M5 polish pass or alongside M6.
+**Next / handoff:** After the MSFT seed + README images land, M5 is 100%. Next is **M6 — Corpus +
+Evidence** (S&P 100, ≥2yr 10-Ks, a ≥30-Q / ≥5–8-company honest eval) per the Phase-2 roadmap; Sally
+writes the M6 prompt(s) on James's go.
+**Roadmap:** M5 — live demo + push + public + prod secret shipped; README money-shot insert + MSFT
+showcase seed are the last 5%.
 
 ---
 

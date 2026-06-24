@@ -14,6 +14,8 @@ reader's source text.
 """
 
 import hashlib
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -184,6 +186,18 @@ def ask_filing(
         result = answer_question(db, filing.id, body.question, llm_client=client)
     except Exception:
         # The 404s above are raised before this block, so we don't mask them.
+        # M5 diagnostic: surface the real cause (the live Space always falls into
+        # demo-mode, so we need the actual exception). logging.exception emits the
+        # traceback; the print() is a belt-and-suspenders fallback in case the HF
+        # container only forwards stdout.
+        logging.getLogger(__name__).exception(
+            "answer_question failed for %s", accession_no
+        )
+        print(
+            f"[ask] answer_question failed for {accession_no}:\n"
+            f"{traceback.format_exc()}",
+            flush=True,
+        )
         return _demo_mode_response(db, provider, model)
 
     # Count only a REAL Gemini call: a non-empty retrieval means generate() ran.

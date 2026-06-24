@@ -23,6 +23,41 @@ share memory — this file is how we hand off. **Newest entry at the top.**
 
 ---
 
+### 2026-06-24 — Bobby (Sonnet 4.6) — M5 ops nearly complete; one Gemini blocker remains
+**Prompted to:** Complete M5 ops and get the smoke test passing.
+**Did:**
+- Set all 9 HF Space env vars (APP_DATABASE_URL, AUTH_SECRET_KEY, GEMINI_API_KEY as secrets; 6 variables)
+- Found and fixed NEXT_PUBLIC_API_URL on Vercel (was empty placeholder — set to `https://jagalv-mosaic-api.hf.space`, redeployed)
+- Company page now loads with live SEC financials ✓
+- Filing page loads with filing reader ✓
+- /ask endpoint being reached (200 OK) but always returns demo mode
+- Switched LLM_MODEL from `gemini-2.5-flash-lite` to `gemini-3.5-flash` (2.5 Flash Lite hit 24/20 RPD daily limit)
+- Confirmed Docker build is clean — bge-small CACHED in image, not the issue
+- Rate limit table stays empty after /ask attempts → `answer_question()` throwing silently (no logging in except block)
+**Verified:** Company page loads ✓. Filing page loads ✓. /ask reaches the API (200 OK) but Gemini call fails silently.
+**Next / handoff:** Alexander needs to (1) add error logging to the except block in ask.py so we can see the actual error, and (2) update `google-genai` from 1.16.0 to latest in requirements.txt — the SDK is from ~2025 and likely incompatible with the current Gemini API (June 2026). After fixing: commit, push to GitHub, force-push services/api subtree to HF Space (`git subtree split --prefix services/api -b hf-deploy-update && git push hf-space hf-deploy-update:main --force && git branch -D hf-deploy-update`). Definition of done: ask a question at mosaic-web-nu.vercel.app and get a cited answer (not demo mode).
+**Roadmap:** M5 — one blocker remaining (Gemini SDK compatibility). Everything else deployed and working.
+
+---
+
+### 2026-06-23 — Bobby (Sonnet 4.6) — M5 ops deploy attempted; smoke test failing
+**Prompted to:** Complete M5 ops: commit Slice-2, apply 0010 to Neon, provision HF Space + Vercel, set env vars, smoke test.
+**Did:**
+- Slice-2 committed and pushed to GitHub (commit 8104261 / 297a64b after Alexander's config.py fix)
+- Migration 0010 applied to Neon (all 10 migrations current, corpus seeded 4,770 chunks)
+- HF Space `jagalv/mosaic-api` created; pushed via `git subtree split` + force push; Space is Running (green dot)
+- Health check at `https://jagalv-mosaic-api.hf.space/health` returns `{"service":"mosaic-api","status":"ok"}`
+- Vercel project deployed at `https://mosaic-web-nu.vercel.app` (James resolved "Services" preset issue manually)
+**Verified:** HF Space running. Vercel frontend loads. **Smoke test FAILING** — `/company/aapl` shows "The API may be unreachable."
+**Next / handoff:** The error is a Next.js **Server Component** error (visible in browser console). Likely cause: HF Space env vars never confirmed as set, OR Vercel `NEXT_PUBLIC_API_URL` not set. Next session must:
+1. Go to https://huggingface.co/spaces/jagalv/mosaic-api → Settings → Variables and secrets → verify/add ALL 9 vars (especially `APP_DATABASE_URL` [Secret] = Neon pooled mosaic_app URL, `CORS_ORIGINS=https://mosaic-web-nu.vercel.app`, `AUTH_SECRET_KEY`, `GEMINI_API_KEY`, `AUTH_COOKIE_SAMESITE=none`, `AUTH_COOKIE_SECURE=true`, `LLM_PROVIDER=gemini`, `LLM_MODEL=gemini-2.5-flash-lite`, `EMBEDDING_MODEL=BAAI/bge-small-en-v1.5`)
+2. Go to Vercel → mosaic-web project → Settings → Environment Variables → confirm `NEXT_PUBLIC_API_URL=https://jagalv-mosaic-api.hf.space` is set
+3. If either was missing, redeploy/restart and re-run smoke test
+4. The mosaic_app Neon pooled URL (for HF Space APP_DATABASE_URL) uses: `postgresql://mosaic_app:<password>@ep-muddy-rain-aigjhgnl-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require` (MOSAIC_APP_PASSWORD in James's memory)
+**Roadmap:** M5 — ops nearly done; smoke test is the only remaining blocker.
+
+---
+
 ### 2026-06-22 — Sally (Opus) — M5 deploy fix verified (REPO_ROOT depth guard)
 **Prompted to:** Fix the HF Space startup crash (config.py REPO_ROOT) + verify.
 **Did (Alexander):** config.py `REPO_ROOT` now guards the parents index

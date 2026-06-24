@@ -6,6 +6,14 @@ So I built something for myself: a tool that reads 10-Ks for me, answers questio
 
 This is a personal learning project. I wanted to get better at financial research, and building the tool seemed like the best way to understand how it all works.
 
+**Live demo:** [mosaic-web-nu.vercel.app](https://mosaic-web-nu.vercel.app) — browse a company, open a 10-K, and try "Ask this filing." Runs entirely on free infrastructure.
+
+![Ask this filing — a cited answer about Apple's 10-K](docs/screenshots/appl-question.png)
+*Ask a 10-K a question in plain English — every claim is footnoted to the exact source.*
+
+![Citation deep-link — the highlighted source paragraph](docs/screenshots/appl-source.png)
+*Click a footnote and it jumps to and highlights the exact paragraph the answer came from — nothing is taken on faith.*
+
 ![Company page — Apple Inc. with 5-year SEC financials](docs/screenshots/company-dash.png)
 *Five years of SEC financials for any company, pulled directly from EDGAR.*
 
@@ -57,6 +65,7 @@ A few things worth calling out for anyone looking at the technical side:
 | Auth | Custom — argon2 + JWT httpOnly cookies | With DB-enforced Postgres RLS |
 | LLM | Gemini Flash (free tier, swappable) | Grounded Q&A — model is abstracted behind an interface |
 | Embeddings | Local `bge-small` | Runs at $0, no rate limits during bulk ingestion |
+| Hosting | Vercel (web) · Hugging Face Spaces (API) · Neon (Postgres) | All free tiers — the live demo runs at ~$0/mo |
 
 ---
 
@@ -116,7 +125,7 @@ mosaic/
 
 ## Status
 
-Phase 1 complete (M0–M4). The core research loop works end-to-end. Currently working on M5 — live demo deploy. See [docs/ROADMAP.md](docs/ROADMAP.md).
+Phase 1 complete (M0–M4) — and **live**: deployed at [mosaic-web-nu.vercel.app](https://mosaic-web-nu.vercel.app) on free infrastructure (Vercel + Hugging Face Spaces + Neon). Next up (M6): widening the company universe and expanding the evaluation set. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 
